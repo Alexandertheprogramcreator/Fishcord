@@ -21,16 +21,40 @@
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+import {
+getAuth,
+createUserWithEmailAndPassword,
+signInWithEmailAndPassword,
+onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import {
+getFirestore,
+doc,
+setDoc,
+getDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+
+/* FIREBASE CONFIG */
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBUkrpmXoPqtmEtxUXBSqTpGW56bCk5LHo", authDomain: "yappatr0n.firebaseapp.com", projectId: "yappatr0n", storageBucket: "yappatr0n.firebasestorage.app", messagingSenderId: "1023173924999", appId: "1:1023173924999:web:3c7cb4444b4433df730022", measurementId: "G-KGBX045412"
+apiKey: "AIzaSyBUkrpmXoPqtmEtxUXBSqTpGW56bCk5LHo",
+authDomain: "yappatr0n.firebaseapp.com",
+projectId: "yappatr0n",
+storageBucket: "yappatr0n.firebasestorage.app",
+messagingSenderId: "1023173924999",
+appId: "1:1023173924999:web:3c7cb4444b4433df730022",
+measurementId: "G-KGBX045412"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+
+/* ELEMENTS */
 
 const emailInput = document.getElementById("emailInput");
 const passwordInput = document.getElementById("passwordInput");
@@ -40,52 +64,95 @@ const loginPasswordInput = document.getElementById("loginPasswordInput");
 
 const signupBtn = document.getElementById("signupBtn");
 const loginBtn = document.getElementById("loginBtn");
+
 const status = document.getElementById("status");
 
+
+/* SIGNUP */
+
 signupBtn.onclick = async () => {
-  try {
 
-    const email = emailInput.value;
-    const pass = passwordInput.value;
+try{
 
-    const userCred = await createUserWithEmailAndPassword(auth, email, pass);
+const email = emailInput.value.trim();
+const pass = passwordInput.value.trim();
 
-    await setDoc(doc(db,"users",userCred.user.uid),{
-      role:"user",
-      muted:false,
-      banned:false
-    });
+if(!email || !pass){
+status.textContent = "Enter email and password";
+return;
+}
 
-    status.textContent = "Account created";
+const userCred = await createUserWithEmailAndPassword(auth,email,pass);
 
-  } catch(err) {
-    console.error(err);
-    status.textContent = err.message;
-  }
+/* CREATE USER DOCUMENT */
+
+await setDoc(doc(db,"users",userCred.user.uid),{
+role:"user",
+muted:false,
+banned:false
+});
+
+status.textContent = "Account created successfully";
+
+}catch(err){
+
+console.error(err);
+status.textContent = err.message;
+
+}
+
 };
+
+
+/* LOGIN */
 
 loginBtn.onclick = async () => {
-  try {
 
-    const email = loginEmailInput.value;
-    const pass = loginPasswordInput.value;
+try{
 
-    const userCred = await signInWithEmailAndPassword(auth,email,pass);
+const email = loginEmailInput.value.trim();
+const pass = loginPasswordInput.value.trim();
 
-    const userDoc = await getDoc(doc(db,"users",userCred.user.uid));
+if(!email || !pass){
+status.textContent = "Enter email and password";
+return;
+}
 
-    if(userDoc.exists() && userDoc.data().banned){
-      status.textContent = "You are banned";
-      return;
-    }
+const userCred = await signInWithEmailAndPassword(auth,email,pass);
 
-    status.textContent = "Logged in";
+/* CHECK USER DATA */
 
-  } catch(err){
-    console.error(err);
-    status.textContent = err.message;
-  }
+const userDoc = await getDoc(doc(db,"users",userCred.user.uid));
+
+if(userDoc.exists() && userDoc.data().banned){
+
+status.textContent = "You are banned";
+auth.signOut();
+return;
+
+}
+
+status.textContent = "Logged in successfully";
+
+}catch(err){
+
+console.error(err);
+status.textContent = err.message;
+
+}
+
 };
+
+
+/* AUTH LISTENER */
+
+onAuthStateChanged(auth,(user)=>{
+
+if(user){
+console.log("Logged in:",user.email);
+}
+
+});
 
 </script>
 
