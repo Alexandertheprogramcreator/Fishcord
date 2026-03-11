@@ -172,10 +172,15 @@ const sendBtn = document.getElementById("sendBtn");
 
 signupBtn.onclick = async () => {
 
-const email = document.getElementById("email").value;
-const pass = document.getElementById("password").value;
+const email = document.getElementById("email").value.trim();
+const pass = document.getElementById("password").value.trim();
 
-await createUserWithEmailAndPassword(auth, email, pass);
+if(!email || !pass){
+alert("Enter email and password");
+return;
+}
+
+await createUserWithEmailAndPassword(auth,email,pass);
 
 await setDoc(doc(db,"users",email),{
 role:"user",
