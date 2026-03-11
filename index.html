@@ -3,20 +3,97 @@
 <head>
 <meta charset="UTF-8">
 <title>Yappatr0n</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f0f2f5;
+margin:0;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+.card{
+background:white;
+width:420px;
+padding:25px;
+border-radius:10px;
+box-shadow:0 4px 12px rgba(0,0,0,0.15);
+}
+
+input,select{
+width:100%;
+padding:10px;
+margin-top:10px;
+border:1px solid #ccc;
+border-radius:6px;
+}
+
+button{
+width:100%;
+padding:10px;
+margin-top:10px;
+border:none;
+border-radius:6px;
+font-weight:bold;
+cursor:pointer;
+}
+
+.login{background:#2d6cdf;color:white;}
+.signup{background:#2ecc71;color:white;}
+.send{background:#2d6cdf;color:white}
+
+#messages{
+height:300px;
+overflow-y:auto;
+border:1px solid #ddd;
+margin-top:10px;
+padding:10px;
+border-radius:6px;
+background:#fafafa;
+}
+
+.message{
+margin-bottom:8px;
+}
+
+</style>
 </head>
+
 <body>
 
-<h2>Sign Up</h2>
-<input id="emailInput" placeholder="Email">
-<input id="passwordInput" type="password" placeholder="Password">
-<button id="signupBtn">Sign Up</button>
+<div id="loginCard" class="card">
 
-<h2>Log In</h2>
-<input id="loginEmailInput" placeholder="Email">
-<input id="loginPasswordInput" type="password" placeholder="Password">
-<button id="loginBtn">Log In</button>
+<h3>Sign In / Sign Up</h3>
+
+<input id="emailInput" placeholder="email">
+<input id="passwordInput" type="password" placeholder="password">
+
+<button class="login" id="loginBtn">Login</button>
+<button class="signup" id="signupBtn">Create Account</button>
 
 <p id="status"></p>
+
+</div>
+
+<div id="chatCard" class="card" style="display:none">
+
+<h3>Yappatr0n Chat</h3>
+
+<select id="chatSelect"></select>
+
+<button id="createChatBtn">Create Chat</button>
+
+<div id="messages"></div>
+
+<input id="messageInput" placeholder="Type message">
+
+<button class="send" id="sendBtn">Send</button>
+
+</div>
 
 <script type="module">
 
@@ -31,128 +108,317 @@ onAuthStateChanged
 
 import {
 getFirestore,
+collection,
 doc,
 setDoc,
-getDoc
+getDoc,
+addDoc,
+onSnapshot,
+query,
+orderBy,
+serverTimestamp,
+updateDoc,
+getDocs,
+deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-
-/* FIREBASE CONFIG */
-
-const firebaseConfig = {
-apiKey: "AIzaSyBUkrpmXoPqtmEtxUXBSqTpGW56bCk5LHo",
-authDomain: "yappatr0n.firebaseapp.com",
-projectId: "yappatr0n",
-storageBucket: "yappatr0n.firebasestorage.app",
-messagingSenderId: "1023173924999",
-appId: "1:1023173924999:web:3c7cb4444b4433df730022",
-measurementId: "G-KGBX045412"
+const firebaseConfig={
+apiKey:"AIzaSyBUkrpmXoPqtmEtxUXBSqTpGW56bCk5LHo",
+authDomain:"yappatr0n.firebaseapp.com",
+projectId:"yappatr0n",
+storageBucket:"yappatr0n.firebasestorage.app",
+messagingSenderId:"1023173924999",
+appId:"1:1023173924999:web:3c7cb4444b4433df730022"
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+const app=initializeApp(firebaseConfig);
+const auth=getAuth(app);
+const db=getFirestore(app);
 
+const OWNER="alexanderjsanders@gmail.com";
+
+let currentChat="global";
 
 /* ELEMENTS */
 
-const emailInput = document.getElementById("emailInput");
-const passwordInput = document.getElementById("passwordInput");
+const loginCard=document.getElementById("loginCard");
+const chatCard=document.getElementById("chatCard");
 
-const loginEmailInput = document.getElementById("loginEmailInput");
-const loginPasswordInput = document.getElementById("loginPasswordInput");
+const emailInput=document.getElementById("emailInput");
+const passwordInput=document.getElementById("passwordInput");
 
-const signupBtn = document.getElementById("signupBtn");
-const loginBtn = document.getElementById("loginBtn");
+const loginBtn=document.getElementById("loginBtn");
+const signupBtn=document.getElementById("signupBtn");
 
-const status = document.getElementById("status");
+const chatSelect=document.getElementById("chatSelect");
+const messagesDiv=document.getElementById("messages");
 
+const messageInput=document.getElementById("messageInput");
+const sendBtn=document.getElementById("sendBtn");
+
+const createChatBtn=document.getElementById("createChatBtn");
+
+const status=document.getElementById("status");
 
 /* SIGNUP */
 
-signupBtn.onclick = async () => {
+signupBtn.onclick=async()=>{
 
 try{
 
-const email = emailInput.value.trim();
-const pass = passwordInput.value.trim();
+const email=emailInput.value;
+const pass=passwordInput.value;
 
-if(!email || !pass){
-status.textContent = "Enter email and password";
-return;
-}
+const cred=await createUserWithEmailAndPassword(auth,email,pass);
 
-const userCred = await createUserWithEmailAndPassword(auth,email,pass);
-
-/* CREATE USER DOCUMENT */
-
-await setDoc(doc(db,"users",userCred.user.uid),{
+await setDoc(doc(db,"users",cred.user.email),{
 role:"user",
 muted:false,
 banned:false
 });
 
-status.textContent = "Account created successfully";
+status.textContent="Account created";
 
-}catch(err){
-
-console.error(err);
-status.textContent = err.message;
-
+}catch(e){
+status.textContent=e.message;
 }
 
 };
-
 
 /* LOGIN */
 
-loginBtn.onclick = async () => {
+loginBtn.onclick=async()=>{
 
 try{
 
-const email = loginEmailInput.value.trim();
-const pass = loginPasswordInput.value.trim();
+await signInWithEmailAndPassword(auth,emailInput.value,passwordInput.value);
+status.textContent="Logged in";
 
-if(!email || !pass){
-status.textContent = "Enter email and password";
-return;
-}
-
-const userCred = await signInWithEmailAndPassword(auth,email,pass);
-
-/* CHECK USER DATA */
-
-const userDoc = await getDoc(doc(db,"users",userCred.user.uid));
-
-if(userDoc.exists() && userDoc.data().banned){
-
-status.textContent = "You are banned";
-auth.signOut();
-return;
-
-}
-
-status.textContent = "Logged in successfully";
-
-}catch(err){
-
-console.error(err);
-status.textContent = err.message;
-
+}catch(e){
+status.textContent=e.message;
 }
 
 };
 
+/* AUTH */
 
-/* AUTH LISTENER */
+onAuthStateChanged(auth,user=>{
 
-onAuthStateChanged(auth,(user)=>{
+if(!user)return;
 
-if(user){
-console.log("Logged in:",user.email);
-}
+loginCard.style.display="none";
+chatCard.style.display="block";
+
+loadChats();
+loadMessages();
 
 });
+
+/* CHATS */
+
+function loadChats(){
+
+onSnapshot(collection(db,"chats"),snap=>{
+
+chatSelect.innerHTML="";
+
+snap.forEach(chat=>{
+
+const option=document.createElement("option");
+
+option.value=chat.id;
+option.text=chat.id;
+
+chatSelect.appendChild(option);
+
+});
+
+});
+
+}
+
+chatSelect.onchange=()=>{
+
+currentChat=chatSelect.value;
+loadMessages();
+
+};
+
+createChatBtn.onclick=async()=>{
+
+const name=prompt("Chat name");
+
+if(!name)return;
+
+await setDoc(doc(db,"chats",name),{
+createdBy:auth.currentUser.email,
+staffOnly:false
+});
+
+};
+
+/* MESSAGES */
+
+function loadMessages(){
+
+const q=query(collection(db,"chats",currentChat,"messages"),orderBy("timestamp"));
+
+onSnapshot(q,snap=>{
+
+messagesDiv.innerHTML="";
+
+snap.forEach(m=>{
+
+const data=m.data();
+
+const div=document.createElement("div");
+div.className="message";
+div.innerText=data.sender+": "+data.text;
+
+messagesDiv.appendChild(div);
+
+});
+
+});
+
+}
+
+/* SEND */
+
+sendBtn.onclick=async()=>{
+
+const text=messageInput.value.trim();
+if(!text)return;
+
+if(text.startsWith("/")){
+handleCommand(text);
+messageInput.value="";
+return;
+}
+
+const userDoc=await getDoc(doc(db,"users",auth.currentUser.email));
+const user=userDoc.data();
+
+if(user.banned){
+alert("You are banned");
+return;
+}
+
+if(user.muted){
+alert("You are muted");
+return;
+}
+
+await addDoc(collection(db,"chats",currentChat,"messages"),{
+
+sender:auth.currentUser.email,
+text:text,
+timestamp:serverTimestamp()
+
+});
+
+messageInput.value="";
+
+};
+
+/* COMMANDS */
+
+async function handleCommand(text){
+
+const parts=text.split(" ");
+const cmd=parts[0];
+const target=parts[1];
+
+const me=(await getDoc(doc(db,"users",auth.currentUser.email))).data();
+
+if(me.role!=="admin" && auth.currentUser.email!==OWNER){
+alert("Staff only command");
+return;
+}
+
+if(target===OWNER){
+alert("Cannot target owner");
+return;
+}
+
+/* MUTE */
+
+if(cmd==="/mute"){
+await updateDoc(doc(db,"users",target),{muted:true});
+}
+
+/* UNMUTE */
+
+if(cmd==="/unmute"){
+await updateDoc(doc(db,"users",target),{muted:false});
+}
+
+/* BAN */
+
+if(cmd==="/ban"){
+await updateDoc(doc(db,"users",target),{banned:true});
+}
+
+/* DELETE MESSAGE */
+
+if(cmd==="/delete" && parts[1]==="message"){
+
+const textDelete=parts.slice(2).join(" ").toLowerCase();
+
+const snap=await getDocs(collection(db,"chats",currentChat,"messages"));
+
+for(const m of snap.docs){
+
+if(m.data().text.toLowerCase().includes(textDelete)){
+await deleteDoc(m.ref);
+}
+
+}
+
+}
+
+/* DELETE CHAT */
+
+if(cmd==="/delete" && parts[1]==="chat"){
+
+const chatName=parts[2];
+
+const snap=await getDocs(collection(db,"chats",chatName,"messages"));
+
+for(const m of snap.docs){
+await deleteDoc(m.ref);
+}
+
+await deleteDoc(doc(db,"chats",chatName));
+
+}
+
+/* STAFF CHAT */
+
+if(cmd==="/staffchat"){
+
+await setDoc(doc(db,"chats","staff"),{
+staffOnly:true
+});
+
+}
+
+/* PROMOTE */
+
+if(cmd==="/promote"){
+
+if(auth.currentUser.email!==OWNER){
+alert("Only owner can promote");
+return;
+}
+
+await updateDoc(doc(db,"users",target),{
+role:"admin"
+});
+
+}
+
+}
 
 </script>
 
