@@ -8,69 +8,80 @@
 <style>
 
 body{
-    font-family: Arial;
-    background-image: url("FISHCORD-BACKGROUND.JPG");
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    margin:0;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    height:100vh;
+font-family:Arial;
+background-image:url("FISHCORD-BACKGROUND.JPG");
+background-size:cover;
+background-position:center;
+background-repeat:no-repeat;
+background-attachment:fixed;
+margin:0;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
 }
-
-/* CARD */
 
 .card{
-    background:lab(87.77% -85.93 83.22);
-    width:420px;
-    padding:25px;
-    border-radius:10px;
-    box-shadow:0 4px 12px rgba(0,0,0,0.15);
+background:lab(87.77% -85.93 83.22);
+width:420px;
+padding:25px;
+border-radius:10px;
+box-shadow:0 4px 12px rgba(0,0,0,0.15);
 }
-
-/* INPUTS */
 
 input,select{
-    width:100%;
-    padding:10px;
-    margin-top:10px;
-    border:1px solid #ccc;
-    border-radius:6px;
+width:100%;
+padding:10px;
+margin-top:10px;
+border:1px solid #ccc;
+border-radius:6px;
 }
 
-/* BUTTONS */
-
 button{
-    width:100%;
-    padding:10px;
-    margin-top:10px;
-    border:none;
-    border-radius:6px;
-    font-weight:bold;
-    cursor:pointer;
+width:100%;
+padding:10px;
+margin-top:10px;
+border:none;
+border-radius:6px;
+font-weight:bold;
+cursor:pointer;
 }
 
 .login{background:#2d6cdf;color:white;}
 .signup{background:#2ecc71;color:white;}
 .send{background:#2d6cdf;color:white;}
 
-/* MESSAGES */
-
 #messages{
-    height:300px;
-    overflow-y:auto;
-    border:1px solid #ddd;
-    margin-top:10px;
-    padding:10px;
-    border-radius:6px;
-    background:#001eff;
+height:300px;
+overflow-y:auto;
+border:1px solid #ddd;
+margin-top:10px;
+padding:10px;
+border-radius:6px;
+background:#001eff;
+color:white;
 }
 
 .message{
-    margin-bottom:8px;
+margin-bottom:8px;
+}
+
+.badge{
+font-size:10px;
+padding:2px 6px;
+border-radius:4px;
+margin-right:4px;
+}
+
+.owner{background:red;}
+.dev{background:purple;}
+.admin{background:orange;}
+.mod{background:green;}
+
+.timestamp{
+font-size:10px;
+opacity:0.6;
+margin-left:5px;
 }
 
 </style>
@@ -79,9 +90,8 @@ button{
 
 <body>
 
-<!-- LOGIN -->
-
 <div id="loginCard" class="card">
+
 <h3>Sign In / Sign Up</h3>
 
 <input id="emailInput" placeholder="email">
@@ -92,8 +102,6 @@ button{
 <p id="status"></p>
 
 </div>
-
-<!-- CHAT -->
 
 <div id="chatCard" class="card" style="display:none">
 
@@ -114,10 +122,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, doc, setDoc, getDoc, addDoc, onSnapshot, query, orderBy, serverTimestamp, getDocs, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* FIREBASE */
-
-const firebaseConfig = {
-apiKey:"AIzaSyBUkrpmXoPqtmEtxUXBSqTpGW56bCk5LHo",
+const firebaseConfig={
+apiKey:"AIzaSyBUkrpmXoPqtmEtxUXBSqGW56bCk5LHo",
 authDomain:"yappatr0n.firebaseapp.com",
 projectId:"yappatr0n",
 storageBucket:"yappatr0n.firebasestorage.app",
@@ -129,37 +135,10 @@ const app=initializeApp(firebaseConfig);
 const auth=getAuth(app);
 const db=getFirestore(app);
 
-/* OWNER */
-
 const OWNER="hananisthebest07@gmail.com";
 const DEVELOPER="alexanderjsanders@gmail.com";
 
-/* WORD FILTER */
-
-const bannedWords=[
-"spam",
-"scam",
-"badword",
-"dick",
-"pussy",
-"nigger",
-"how old are you",
-"where do you live",
-"child porn",
-"cp",
-"niger",
-"penis",
-"porn",
-"sex",
-"tits",
-"boobs",
-"pornography",
-"how old are you?",
-"where do you live?",
-"what is your address"
-];
-
-/* ELEMENTS */
+let currentChat="global";
 
 const loginCard=document.getElementById("loginCard");
 const chatCard=document.getElementById("chatCard");
@@ -171,19 +150,13 @@ const loginBtn=document.getElementById("loginBtn");
 const signupBtn=document.getElementById("signupBtn");
 
 const chatSelect=document.getElementById("chatSelect");
-
 const messagesDiv=document.getElementById("messages");
 
 const messageInput=document.getElementById("messageInput");
 const sendBtn=document.getElementById("sendBtn");
-
 const createChatBtn=document.getElementById("createChatBtn");
 
 const status=document.getElementById("status");
-
-let currentChat="global";
-
-/* SIGNUP */
 
 signupBtn.onclick=async()=>{
 
@@ -194,34 +167,23 @@ const user=await createUserWithEmailAndPassword(auth,emailInput.value,passwordIn
 await setDoc(doc(db,"users",user.user.email),{
 role:"user",
 muted:false,
-banned:false
+banned:false,
+warnings:0
 });
 
 status.textContent="Account created";
 
-}
-
-catch(e){
-status.textContent=e.message;
-}
+}catch(e){status.textContent=e.message;}
 
 };
-
-/* LOGIN */
 
 loginBtn.onclick=async()=>{
 
 try{
 await signInWithEmailAndPassword(auth,emailInput.value,passwordInput.value);
-}
-
-catch(e){
-status.textContent=e.message;
-}
+}catch(e){status.textContent=e.message;}
 
 };
-
-/* AUTH STATE */
 
 onAuthStateChanged(auth,user=>{
 
@@ -237,8 +199,6 @@ loadMessages();
 
 });
 
-/* LOAD CHATS */
-
 function loadChats(){
 
 onSnapshot(collection(db,"chats"),snap=>{
@@ -248,7 +208,6 @@ chatSelect.innerHTML="";
 snap.forEach(chat=>{
 
 const opt=document.createElement("option");
-
 opt.value=chat.id;
 opt.text=chat.id;
 
@@ -267,97 +226,94 @@ loadMessages();
 
 };
 
-/* CREATE CHAT */
-
 createChatBtn.onclick=async()=>{
 
 const name=prompt("Chat name");
-
 if(!name)return;
 
 await setDoc(doc(db,"chats",name),{
 createdBy:auth.currentUser.email,
-staffOnly:false
+locked:false
 });
 
 };
 
-/* LOAD MESSAGES */
+function badge(role,email){
+
+if(email===OWNER) return '<span class="badge owner">OWNER</span>';
+if(email===DEVELOPER) return '<span class="badge dev">DEV</span>';
+if(role==="admin") return '<span class="badge admin">ADMIN</span>';
+if(role==="moderator") return '<span class="badge mod">MOD</span>';
+
+return "";
+
+}
 
 function loadMessages(){
 
 const q=query(collection(db,"chats",currentChat,"messages"),orderBy("timestamp"));
 
-onSnapshot(q,snap=>{
+onSnapshot(q,async snap=>{
 
 messagesDiv.innerHTML="";
 
-snap.forEach(m=>{
+for(const m of snap.docs){
 
 const data=m.data();
+const userDoc=await getDoc(doc(db,"users",data.sender));
+const role=userDoc.exists()?userDoc.data().role:"user";
+
+const time=data.timestamp?.toDate().toLocaleTimeString()||"";
 
 const div=document.createElement("div");
-
 div.className="message";
 
-div.innerText=data.sender+" : "+data.text;
+div.innerHTML=
+badge(role,data.sender)+
+data.sender+" : "+data.text+
+'<span class="timestamp">'+time+'</span>';
 
 messagesDiv.appendChild(div);
 
-});
+}
 
 });
 
 }
-
-/* SEND MESSAGE */
 
 sendBtn.onclick=async()=>{
 
 const text=messageInput.value.trim();
-
 if(!text)return;
 
-const lower=text.toLowerCase();
+const userDoc=await getDoc(doc(db,"users",auth.currentUser.email));
+const me=userDoc.data();
 
-/* WORD FILTER */
+if(me.banned){alert("You are banned.");return;}
+if(me.muted){alert("You are muted.");return;}
 
-for(const word of bannedWords){
+const chatDoc=await getDoc(doc(db,"chats",currentChat));
 
-if(lower.includes(word)){
-
-alert("Message blocked: inappropriate language.");
-
-messageInput.value="";
+if(chatDoc.data().locked && me.role==="user"){
+alert("Chat locked");
 return;
-
 }
-
-}
-
-/* COMMANDS */
 
 if(text.startsWith("/")){
-
 handleCommand(text);
 messageInput.value="";
 return;
-
 }
 
 await addDoc(collection(db,"chats",currentChat,"messages"),{
-
 sender:auth.currentUser.email,
 text:text,
 timestamp:serverTimestamp()
-
 });
 
 messageInput.value="";
 
 };
-
-/* COMMANDS */
 
 async function handleCommand(text){
 
@@ -368,43 +324,98 @@ const target=parts[1];
 const userDoc=await getDoc(doc(db,"users",auth.currentUser.email));
 const me=userDoc.data();
 
-if(me.role!=="admin" && auth.currentUser.email!==OWNER && auth.currentUser.email!==DEVELOPER){
+const isOwner=auth.currentUser.email===OWNER;
+const isDev=auth.currentUser.email===DEVELOPER;
+const isAdmin=me.role==="admin";
+const isMod=me.role==="moderator";
 
-alert("Staff only command");
+if(!(isOwner||isDev||isAdmin||isMod)){
+alert("Moderators only");
 return;
-
 }
 
-if(target===OWNER){
-
-alert("Cannot target Owner");
+if(target===OWNER||target===DEVELOPER){
+alert("Cannot target owner or developer");
 return;
-
 }
-
-if(target===DEVELOPER){
-
-alert("Cannot target Developer");
-return;
-
-}
-
-/* MUTE */
 
 if(cmd==="/mute"){
 await updateDoc(doc(db,"users",target),{muted:true});
 }
 
-/* UNMUTE */
-
 if(cmd==="/unmute"){
 await updateDoc(doc(db,"users",target),{muted:false});
 }
 
-/* BAN */
-
 if(cmd==="/ban"){
+if(!(isOwner||isDev||isAdmin)){alert("Admins only");return;}
 await updateDoc(doc(db,"users",target),{banned:true});
+}
+
+if(cmd==="/unban"){
+if(!(isOwner||isDev||isAdmin)){alert("Admins only");return;}
+await updateDoc(doc(db,"users",target),{banned:false});
+}
+
+if(cmd==="/warn"){
+const t=await getDoc(doc(db,"users",target));
+await updateDoc(doc(db,"users",target),{warnings:(t.data().warnings||0)+1});
+}
+
+if(cmd==="/promote"){
+if(!(isOwner||isDev)){alert("Owner/Dev only");return;}
+const role=parts[2];
+await updateDoc(doc(db,"users",target),{role:role});
+}
+
+if(cmd==="/demote"){
+if(!(isOwner||isDev)){alert("Owner/Dev only");return;}
+await updateDoc(doc(db,"users",target),{role:"user"});
+}
+
+if(cmd==="/lock"){
+await updateDoc(doc(db,"chats",currentChat),{locked:true});
+}
+
+if(cmd==="/unlock"){
+await updateDoc(doc(db,"chats",currentChat),{locked:false});
+}
+
+if(cmd==="/clear"){
+
+const amount=parseInt(parts[1]);
+
+const q=query(collection(db,"chats",currentChat,"messages"),orderBy("timestamp","desc"));
+const snap=await getDocs(q);
+
+let count=0;
+
+for(const m of snap.docs){
+
+if(count>=amount) break;
+
+await deleteDoc(doc(db,"chats",currentChat,"messages",m.id));
+
+count++;
+
+}
+
+}
+
+if(cmd==="/delete"){
+
+const messageText=parts.slice(1).join(" ");
+
+const snap=await getDocs(collection(db,"chats",currentChat,"messages"));
+
+snap.forEach(async m=>{
+
+if(m.data().text===messageText){
+await deleteDoc(doc(db,"chats",currentChat,"messages",m.id));
+}
+
+});
+
 }
 
 }
