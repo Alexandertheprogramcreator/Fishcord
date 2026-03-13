@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html>
 <head>
 <meta charset="UTF-8">
@@ -85,7 +84,6 @@ margin-left:5px;
 }
 
 </style>
-
 </head>
 
 <body>
@@ -97,7 +95,8 @@ margin-left:5px;
 <input id="emailInput" placeholder="email">
 <input id="passwordInput" type="password" placeholder="password">
 
-<button class="login" id="loginBtn">Login</button> <button class="signup" id="signupBtn">Create Account</button>
+<button class="login" id="loginBtn">Login</button>
+<button class="signup" id="signupBtn">Create Account</button>
 
 <p id="status"></p>
 
@@ -107,7 +106,9 @@ margin-left:5px;
 
 <h3>Fishcord Chat</h3>
 
-<select id="chatSelect"></select> <button id="createChatBtn">Create Chat</button> <button id="deleteChatBtn">Delete Chat</button>
+<select id="chatSelect"></select>
+<button id="createChatBtn">Create Chat</button>
+<button id="deleteChatBtn">Delete Chat</button>
 
 <div id="messages"></div>
 
@@ -120,7 +121,7 @@ margin-left:5px;
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, doc, setDoc, getDoc, addDoc, onSnapshot, query, orderBy, serverTimestamp, getDocs, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, doc, setDoc, getDoc, addDoc, onSnapshot, query, orderBy, serverTimestamp, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig={
 apiKey:"AIzaSyBUkrpmXoPqtmEtxUXBSqTpGW56bCk5LHo",
@@ -164,7 +165,6 @@ createChatBtn.style.display="none";
 deleteChatBtn.style.display="none";
 
 signupBtn.onclick=async()=>{
-
 try{
 
 const user=await createUserWithEmailAndPassword(auth,emailInput.value,passwordInput.value);
@@ -179,15 +179,12 @@ warnings:0
 status.textContent="Account created";
 
 }catch(e){status.textContent=e.message;}
-
 };
 
 loginBtn.onclick=async()=>{
-
 try{
 await signInWithEmailAndPassword(auth,emailInput.value,passwordInput.value);
 }catch(e){status.textContent=e.message;}
-
 };
 
 onAuthStateChanged(auth,async user=>{
@@ -223,13 +220,10 @@ onSnapshot(collection(db,"chats"),snap=>{
 chatSelect.innerHTML="";
 
 snap.forEach(chat=>{
-
 const opt=document.createElement("option");
 opt.value=chat.id;
 opt.text=chat.id;
-
 chatSelect.appendChild(opt);
-
 });
 
 });
@@ -243,18 +237,6 @@ loadMessages();
 
 createChatBtn.onclick=async()=>{
 
-const userDoc=await getDoc(doc(db,"users",auth.currentUser.email));
-const role=userDoc.data().role;
-
-const isOwner=auth.currentUser.email===OWNER;
-const isDev=auth.currentUser.email===DEVELOPER;
-const isAdmin=role==="admin";
-
-if(!(isOwner||isDev||isAdmin)){
-alert("Only admins or higher can create chats.");
-return;
-}
-
 const name=prompt("Chat name");
 if(!name)return;
 
@@ -266,6 +248,10 @@ locked:false
 };
 
 deleteChatBtn.onclick=async()=>{
+deleteChat(currentChat);
+};
+
+async function deleteChat(chatName){
 
 const userDoc=await getDoc(doc(db,"users",auth.currentUser.email));
 const role=userDoc.data().role;
@@ -279,9 +265,7 @@ alert("Only admins or higher can delete chats.");
 return;
 }
 
-if(!confirm("Delete this chat permanently?")) return;
-
-const chatName=currentChat;
+if(!confirm("Delete "+chatName+" permanently?")) return;
 
 const snap=await getDocs(collection(db,"chats",chatName,"messages"));
 
@@ -293,12 +277,10 @@ await deleteDoc(doc(db,"chats",chatName));
 
 messagesDiv.innerHTML="";
 currentChat="";
-
 loadChats();
 
-alert("Chat deleted permanently.");
-
-};
+alert("Chat deleted.");
+}
 
 function badge(role,email){
 
@@ -350,6 +332,31 @@ if(!text)return;
 
 const userDoc=await getDoc(doc(db,"users",auth.currentUser.email));
 const me=userDoc.data();
+
+/* COMMAND SYSTEM */
+
+if(text.startsWith("/")){
+
+const args=text.split(" ");
+
+if(args[0]==="/delete" && args[1]==="chat"){
+
+const chatName=args[2];
+
+if(!chatName){
+alert("Usage: /delete chat [chatname]");
+return;
+}
+
+await deleteChat(chatName);
+messageInput.value="";
+return;
+
+}
+
+}
+
+/* NORMAL MESSAGE */
 
 if(me.banned){alert("You are banned.");return;}
 if(me.muted){alert("You are muted.");return;}
