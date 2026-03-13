@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html>
 <head>
 <meta charset="UTF-8">
@@ -84,6 +85,7 @@ margin-left:5px;
 }
 
 </style>
+
 </head>
 
 <body>
@@ -95,8 +97,7 @@ margin-left:5px;
 <input id="emailInput" placeholder="email">
 <input id="passwordInput" type="password" placeholder="password">
 
-<button class="login" id="loginBtn">Login</button>
-<button class="signup" id="signupBtn">Create Account</button>
+<button class="login" id="loginBtn">Login</button> <button class="signup" id="signupBtn">Create Account</button>
 
 <p id="status"></p>
 
@@ -106,9 +107,7 @@ margin-left:5px;
 
 <h3>Fishcord Chat</h3>
 
-<select id="chatSelect"></select>
-<button id="createChatBtn">Create Chat</button>
-<button id="deleteChatBtn">Delete Chat</button>
+<select id="chatSelect"></select> <button id="createChatBtn">Create Chat</button> <button id="deleteChatBtn">Delete Chat</button>
 
 <div id="messages"></div>
 
@@ -339,6 +338,11 @@ if(text.startsWith("/")){
 
 const args=text.split(" ");
 
+const isOwner=auth.currentUser.email===OWNER;
+const isDev=auth.currentUser.email===DEVELOPER;
+const isAdmin=me.role==="admin";
+const isMod=me.role==="moderator";
+
 if(args[0]==="/delete" && args[1]==="chat"){
 
 const chatName=args[2];
@@ -349,6 +353,45 @@ return;
 }
 
 await deleteChat(chatName);
+messageInput.value="";
+return;
+
+}
+
+/* CLEAR COMMAND */
+
+if(args[0]==="/clear"){
+
+if(!(isOwner||isDev||isAdmin||isMod)){
+alert("You don't have permission.");
+return;
+}
+
+const amount=parseInt(args[1]);
+
+if(!amount || amount<=0){
+alert("Usage: /clear [number]");
+return;
+}
+
+const q=query(
+collection(db,"chats",currentChat,"messages"),
+orderBy("timestamp","desc")
+);
+
+const snap=await getDocs(q);
+
+let count=0;
+
+for(const m of snap.docs){
+
+if(count>=amount) break;
+
+await deleteDoc(doc(db,"chats",currentChat,"messages",m.id));
+count++;
+
+}
+
 messageInput.value="";
 return;
 
