@@ -132,6 +132,10 @@ const db = getFirestore(app);
 const OWNER = "hananisthebest07@gmail.com";
 const DEVELOPER = "alexanderjsanders@gmail.com";
 
+// -------------------- BANNED WORDS --------------------
+const bannedWords = ["badword1", "badword2", "badword3"]; // Add your banned words here
+// --------------------------------------------------------
+
 let currentChat = "global";
 
 const loginCard = document.getElementById("loginCard");
@@ -264,22 +268,43 @@ function badge(role,email){
     return "";
 }
 
+// -------------------- LOAD MESSAGES WITH BANNED WORD CHECK --------------------
 function loadMessages(){
-    const q = query(collection(db,"chats",currentChat,"messages"),orderBy("timestamp"));
+    const q = query(collection(db,"chats",currentChat,"messages"), orderBy("timestamp"));
+
     onSnapshot(q, async snap => {
-        messagesDiv.innerHTML="";
+        messagesDiv.innerHTML = "";
+
         for(const m of snap.docs){
             const data = m.data();
+
+            // AUTO DELETE BANNED MESSAGES
+            const lowerText = data.text.toLowerCase();
+            let containsBanned = false;
+            for(const word of bannedWords){
+                if(lowerText.includes(word.toLowerCase())){
+                    containsBanned = true;
+                    break;
+                }
+            }
+
+            if(containsBanned){
+                await deleteDoc(doc(db,"chats",currentChat,"messages", m.id));
+                continue; // skip displaying this message
+            }
+
             const userDoc = await getDoc(doc(db,"users",data.sender));
-            const role = userDoc.exists()?userDoc.data().role:"user";
-            const time = data.timestamp?.toDate().toLocaleTimeString()||"";
+            const role = userDoc.exists() ? userDoc.data().role : "user";
+            const time = data.timestamp?.toDate().toLocaleTimeString() || "";
+            
             const div = document.createElement("div");
-            div.className="message";
-            div.innerHTML = badge(role,data.sender) + data.sender + " : " + data.text + '<span class="timestamp">'+time+'</span>';
+            div.className = "message";
+            div.innerHTML = badge(role, data.sender) + data.sender + " : " + data.text + '<span class="timestamp">'+time+'</span>';
             messagesDiv.appendChild(div);
         }
     });
 }
+// -------------------------------------------------------------------------------
 
 sendBtn.onclick = async () => {
     const text = messageInput.value.trim();
@@ -292,6 +317,17 @@ sendBtn.onclick = async () => {
     const isDev = auth.currentUser.email === DEVELOPER;
     const isAdmin = me.role === "admin";
     const isMod = me.role === "moderator";
+
+    // -------------------- BANNED WORDS CHECK BEFORE SENDING --------------------
+    const lowerText = text.toLowerCase();
+    for(const word of bannedWords){
+        if(lowerText.includes(word.toLowerCase())){
+            alert("Message contains banned words and was not sent.");
+            messageInput.value = "";
+            return;
+        }
+    }
+    // -------------------------------------------------------------------------
 
     /* COMMAND SYSTEM */
     if(text.startsWith("/")){
