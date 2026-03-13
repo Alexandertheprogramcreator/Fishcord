@@ -107,7 +107,7 @@ margin-left:5px;
 
 <h3>Fishcord Chat</h3>
 
-<select id="chatSelect"></select> <button id="createChatBtn">Create Chat</button>
+<select id="chatSelect"></select> <button id="createChatBtn">Create Chat</button> <button id="deleteChatBtn">Delete Chat</button>
 
 <div id="messages"></div>
 
@@ -123,7 +123,12 @@ import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, on
 import { getFirestore, collection, doc, setDoc, getDoc, addDoc, onSnapshot, query, orderBy, serverTimestamp, getDocs, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig={
-apiKey:"AIzaSyBUkrpmXoPqtmEtxUXBSqTpGW56bCk5LHo", authDomain:"yappatr0n.firebaseapp.com", projectId:"yappatr0n", storageBucket:"yappatr0n.firebasestorage.app", messagingSenderId:"1023173924999", appId:"1:1023173924999:web:3c7cb4444b4433df730022"
+apiKey:"AIzaSyBUkrpmXoPqtmEtxUXBSqTpGW56bCk5LHo",
+authDomain:"yappatr0n.firebaseapp.com",
+projectId:"yappatr0n",
+storageBucket:"yappatr0n.firebasestorage.app",
+messagingSenderId:"1023173924999",
+appId:"1:1023173924999:web:3c7cb4444b4433df730022"
 };
 
 const app=initializeApp(firebaseConfig);
@@ -149,9 +154,14 @@ const messagesDiv=document.getElementById("messages");
 
 const messageInput=document.getElementById("messageInput");
 const sendBtn=document.getElementById("sendBtn");
+
 const createChatBtn=document.getElementById("createChatBtn");
+const deleteChatBtn=document.getElementById("deleteChatBtn");
 
 const status=document.getElementById("status");
+
+createChatBtn.style.display="none";
+deleteChatBtn.style.display="none";
 
 signupBtn.onclick=async()=>{
 
@@ -180,12 +190,24 @@ await signInWithEmailAndPassword(auth,emailInput.value,passwordInput.value);
 
 };
 
-onAuthStateChanged(auth,user=>{
+onAuthStateChanged(auth,async user=>{
 
 if(user){
 
 loginCard.style.display="none";
 chatCard.style.display="block";
+
+const userDoc=await getDoc(doc(db,"users",user.email));
+const role=userDoc.data().role;
+
+const isOwner=user.email===OWNER;
+const isDev=user.email===DEVELOPER;
+const isAdmin=role==="admin";
+
+if(isOwner||isDev||isAdmin){
+createChatBtn.style.display="block";
+deleteChatBtn.style.display="block";
+}
 
 loadChats();
 loadMessages();
@@ -215,13 +237,23 @@ chatSelect.appendChild(opt);
 }
 
 chatSelect.onchange=()=>{
-
 currentChat=chatSelect.value;
 loadMessages();
-
 };
 
 createChatBtn.onclick=async()=>{
+
+const userDoc=await getDoc(doc(db,"users",auth.currentUser.email));
+const role=userDoc.data().role;
+
+const isOwner=auth.currentUser.email===OWNER;
+const isDev=auth.currentUser.email===DEVELOPER;
+const isAdmin=role==="admin";
+
+if(!(isOwner||isDev||isAdmin)){
+alert("Only admins or higher can create chats.");
+return;
+}
 
 const name=prompt("Chat name");
 if(!name)return;
@@ -230,6 +262,41 @@ await setDoc(doc(db,"chats",name),{
 createdBy:auth.currentUser.email,
 locked:false
 });
+
+};
+
+deleteChatBtn.onclick=async()=>{
+
+const userDoc=await getDoc(doc(db,"users",auth.currentUser.email));
+const role=userDoc.data().role;
+
+const isOwner=auth.currentUser.email===OWNER;
+const isDev=auth.currentUser.email===DEVELOPER;
+const isAdmin=role==="admin";
+
+if(!(isOwner||isDev||isAdmin)){
+alert("Only admins or higher can delete chats.");
+return;
+}
+
+if(!confirm("Delete this chat permanently?")) return;
+
+const chatName=currentChat;
+
+const snap=await getDocs(collection(db,"chats",chatName,"messages"));
+
+for(const m of snap.docs){
+await deleteDoc(doc(db,"chats",chatName,"messages",m.id));
+}
+
+await deleteDoc(doc(db,"chats",chatName));
+
+messagesDiv.innerHTML="";
+currentChat="";
+
+loadChats();
+
+alert("Chat deleted permanently.");
 
 };
 
@@ -294,12 +361,6 @@ alert("Chat locked");
 return;
 }
 
-if(text.startsWith("/")){
-handleCommand(text);
-messageInput.value="";
-return;
-}
-
 await addDoc(collection(db,"chats",currentChat,"messages"),{
 sender:auth.currentUser.email,
 text:text,
@@ -309,111 +370,6 @@ timestamp:serverTimestamp()
 messageInput.value="";
 
 };
-
-async function handleCommand(text){
-
-const parts=text.split(" ");
-const cmd=parts[0];
-const target=parts[1];
-
-const userDoc=await getDoc(doc(db,"users",auth.currentUser.email));
-const me=userDoc.data();
-
-const isOwner=auth.currentUser.email===OWNER;
-const isDev=auth.currentUser.email===DEVELOPER;
-const isAdmin=me.role==="admin";
-const isMod=me.role==="moderator";
-
-if(!(isOwner||isDev||isAdmin||isMod)){
-alert("Moderators only");
-return;
-}
-
-if(target===OWNER||target===DEVELOPER){
-alert("Cannot target owner or developer");
-return;
-}
-
-if(cmd==="/mute"){
-await updateDoc(doc(db,"users",target),{muted:true});
-}
-
-if(cmd==="/unmute"){
-await updateDoc(doc(db,"users",target),{muted:false});
-}
-
-if(cmd==="/ban"){
-if(!(isOwner||isDev||isAdmin)){alert("Admins only");return;}
-await updateDoc(doc(db,"users",target),{banned:true});
-}
-
-if(cmd==="/unban"){
-if(!(isOwner||isDev||isAdmin)){alert("Admins only");return;}
-await updateDoc(doc(db,"users",target),{banned:false});
-}
-
-if(cmd==="/warn"){
-const t=await getDoc(doc(db,"users",target));
-await updateDoc(doc(db,"users",target),{warnings:(t.data().warnings||0)+1});
-}
-
-if(cmd==="/promote"){
-if(!(isOwner||isDev)){alert("Owner/Dev only");return;}
-const role=parts[2];
-await updateDoc(doc(db,"users",target),{role:role});
-}
-
-if(cmd==="/demote"){
-if(!(isOwner||isDev)){alert("Owner/Dev only");return;}
-await updateDoc(doc(db,"users",target),{role:"user"});
-}
-
-if(cmd==="/lock"){
-await updateDoc(doc(db,"chats",currentChat),{locked:true});
-}
-
-if(cmd==="/unlock"){
-await updateDoc(doc(db,"chats",currentChat),{locked:false});
-}
-
-if(cmd==="/clear"){
-
-const amount=parseInt(parts[1]);
-
-const q=query(collection(db,"chats",currentChat,"messages"),orderBy("timestamp","desc"));
-const snap=await getDocs(q);
-
-let count=0;
-
-for(const m of snap.docs){
-
-if(count>=amount) break;
-
-await deleteDoc(doc(db,"chats",currentChat,"messages",m.id));
-
-count++;
-
-}
-
-}
-
-if(cmd==="/delete"){
-
-const messageText=parts.slice(1).join(" ");
-
-const snap=await getDocs(collection(db,"chats",currentChat,"messages"));
-
-snap.forEach(async m=>{
-
-if(m.data().text===messageText){
-await deleteDoc(doc(db,"chats",currentChat,"messages",m.id));
-}
-
-});
-
-}
-
-}
 
 </script>
 
