@@ -1,12 +1,10 @@
 <!DOCTYPE html>
-
 <html>
 <head>
 <meta charset="UTF-8">
 <title>Fischcord</title>
 
 <style>
-
 body{
 font-family:Arial;
 background-image:url("FISHCORD-BACKGROUND.JPG");
@@ -83,37 +81,34 @@ font-size:10px;
 opacity:0.6;
 margin-left:5px;
 }
-
 </style>
-
 </head>
 
 <body>
 
 <div id="loginCard" class="card">
-
 <h3>Sign In / Sign Up</h3>
 
 <input id="emailInput" placeholder="email">
 <input id="passwordInput" type="password" placeholder="password">
 
-<button class="login" id="loginBtn">Login</button> <button class="signup" id="signupBtn">Create Account</button>
+<button class="login" id="loginBtn">Login</button>
+<button class="signup" id="signupBtn">Create Account</button>
 
 <p id="status"></p>
-
 </div>
 
 <div id="chatCard" class="card" style="display:none">
-
 <h3>Fishcord Chat</h3>
 
-<select id="chatSelect"></select> <button id="createChatBtn">Create Chat</button> <button id="deleteChatBtn">Delete Chat</button>
+<select id="chatSelect"></select>
+<button id="createChatBtn">Create Chat</button>
+<button id="deleteChatBtn">Delete Chat</button>
 
 <div id="messages"></div>
 
 <input id="messageInput" placeholder="Type message">
 <button class="send" id="sendBtn">Send</button>
-
 </div>
 
 <script type="module">
@@ -165,18 +160,14 @@ deleteChatBtn.style.display="none";
 
 signupBtn.onclick=async()=>{
 try{
-
 const user=await createUserWithEmailAndPassword(auth,emailInput.value,passwordInput.value);
-
 await setDoc(doc(db,"users",user.user.email),{
 role:"user",
 muted:false,
 banned:false,
 warnings:0
 });
-
 status.textContent="Account created";
-
 }catch(e){status.textContent=e.message;}
 };
 
@@ -187,9 +178,7 @@ await signInWithEmailAndPassword(auth,emailInput.value,passwordInput.value);
 };
 
 onAuthStateChanged(auth,async user=>{
-
 if(user){
-
 loginCard.style.display="none";
 chatCard.style.display="block";
 
@@ -207,26 +196,19 @@ deleteChatBtn.style.display="block";
 
 loadChats();
 loadMessages();
-
 }
-
 });
 
 function loadChats(){
-
 onSnapshot(collection(db,"chats"),snap=>{
-
 chatSelect.innerHTML="";
-
 snap.forEach(chat=>{
 const opt=document.createElement("option");
 opt.value=chat.id;
 opt.text=chat.id;
 chatSelect.appendChild(opt);
 });
-
 });
-
 }
 
 chatSelect.onchange=()=>{
@@ -235,15 +217,12 @@ loadMessages();
 };
 
 createChatBtn.onclick=async()=>{
-
 const name=prompt("Chat name");
 if(!name)return;
-
 await setDoc(doc(db,"chats",name),{
 createdBy:auth.currentUser.email,
 locked:false
 });
-
 };
 
 deleteChatBtn.onclick=async()=>{
@@ -251,10 +230,8 @@ deleteChat(currentChat);
 };
 
 async function deleteChat(chatName){
-
 const userDoc=await getDoc(doc(db,"users",auth.currentUser.email));
 const role=userDoc.data().role;
-
 const isOwner=auth.currentUser.email===OWNER;
 const isDev=auth.currentUser.email===DEVELOPER;
 const isAdmin=role==="admin";
@@ -267,7 +244,6 @@ return;
 if(!confirm("Delete "+chatName+" permanently?")) return;
 
 const snap=await getDocs(collection(db,"chats",chatName,"messages"));
-
 for(const m of snap.docs){
 await deleteDoc(doc(db,"chats",chatName,"messages",m.id));
 }
@@ -282,58 +258,39 @@ alert("Chat deleted.");
 }
 
 function badge(role,email){
-
 if(email===OWNER) return '<span class="badge owner">OWNER</span>';
 if(email===DEVELOPER) return '<span class="badge dev">DEV</span>';
 if(role==="admin") return '<span class="badge admin">ADMIN</span>';
 if(role==="moderator") return '<span class="badge mod">MOD</span>';
-
 return "";
-
 }
 
 function loadMessages(){
-
 const q=query(collection(db,"chats",currentChat,"messages"),orderBy("timestamp"));
-
 onSnapshot(q,async snap=>{
-
 messagesDiv.innerHTML="";
-
 for(const m of snap.docs){
-
 const data=m.data();
 const userDoc=await getDoc(doc(db,"users",data.sender));
 const role=userDoc.exists()?userDoc.data().role:"user";
-
 const time=data.timestamp?.toDate().toLocaleTimeString()||"";
-
 const div=document.createElement("div");
 div.className="message";
-
-div.innerHTML=
-badge(role,data.sender)+
-data.sender+" : "+data.text+
-'<span class="timestamp">'+time+'</span>';
-
+div.innerHTML=badge(role,data.sender)+data.sender+" : "+data.text+'<span class="timestamp">'+time+'</span>';
 messagesDiv.appendChild(div);
-
 }
-
 });
-
 }
 
 sendBtn.onclick=async()=>{
 
 const text=messageInput.value.trim();
-if(!text)return;
+if(!text) return;
 
 const userDoc=await getDoc(doc(db,"users",auth.currentUser.email));
 const me=userDoc.data();
 
 /* COMMAND SYSTEM */
-
 if(text.startsWith("/")){
 
 const args=text.split(" ");
@@ -343,32 +300,25 @@ const isDev=auth.currentUser.email===DEVELOPER;
 const isAdmin=me.role==="admin";
 const isMod=me.role==="moderator";
 
+// DELETE CHAT
 if(args[0]==="/delete" && args[1]==="chat"){
-
 const chatName=args[2];
-
 if(!chatName){
 alert("Usage: /delete chat [chatname]");
 return;
 }
-
 await deleteChat(chatName);
 messageInput.value="";
 return;
-
 }
 
-/* CLEAR COMMAND */
-
+// CLEAR MESSAGES
 if(args[0]==="/clear"){
-
 if(!(isOwner||isDev||isAdmin||isMod)){
 alert("You don't have permission.");
 return;
 }
-
 const amount=parseInt(args[1]);
-
 if(!amount || amount<=0){
 alert("Usage: /clear [number]");
 return;
@@ -378,39 +328,32 @@ const q=query(
 collection(db,"chats",currentChat,"messages"),
 orderBy("timestamp","desc")
 );
-
 const snap=await getDocs(q);
 
 let count=0;
-
 for(const m of snap.docs){
-
 if(count>=amount) break;
-
 await deleteDoc(doc(db,"chats",currentChat,"messages",m.id));
 count++;
-
 }
 
 messageInput.value="";
 return;
-
 }
 
 }
 
-/* NORMAL MESSAGE */
-
-if(me.banned){alert("You are banned.");return;}
-if(me.muted){alert("You are muted.");return;}
+/* NORMAL MESSAGE LOGIC */
+if(me.banned){ alert("You are banned."); return; }
+if(me.muted){ alert("You are muted."); return; }
 
 const chatDoc=await getDoc(doc(db,"chats",currentChat));
-
 if(chatDoc.data().locked && me.role==="user"){
 alert("Chat locked");
 return;
 }
 
+// Send normal message
 await addDoc(collection(db,"chats",currentChat,"messages"),{
 sender:auth.currentUser.email,
 text:text,
@@ -418,7 +361,6 @@ timestamp:serverTimestamp()
 });
 
 messageInput.value="";
-
 };
 
 </script>
