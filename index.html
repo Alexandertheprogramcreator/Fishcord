@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -112,7 +112,6 @@ margin-left:5px;
 </div>
 
 <script type="module">
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, doc, setDoc, getDoc, addDoc, onSnapshot, query, orderBy, serverTimestamp, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -126,243 +125,248 @@ messagingSenderId:"1023173924999",
 appId:"1:1023173924999:web:3c7cb4444b4433df730022"
 };
 
-const app=initializeApp(firebaseConfig);
-const auth=getAuth(app);
-const db=getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-const OWNER="hananisthebest07@gmail.com";
-const DEVELOPER="alexanderjsanders@gmail.com";
+const OWNER = "hananisthebest07@gmail.com";
+const DEVELOPER = "alexanderjsanders@gmail.com";
 
-let currentChat="global";
+let currentChat = "global";
 
-const loginCard=document.getElementById("loginCard");
-const chatCard=document.getElementById("chatCard");
+const loginCard = document.getElementById("loginCard");
+const chatCard = document.getElementById("chatCard");
 
-const emailInput=document.getElementById("emailInput");
-const passwordInput=document.getElementById("passwordInput");
+const emailInput = document.getElementById("emailInput");
+const passwordInput = document.getElementById("passwordInput");
 
-const loginBtn=document.getElementById("loginBtn");
-const signupBtn=document.getElementById("signupBtn");
+const loginBtn = document.getElementById("loginBtn");
+const signupBtn = document.getElementById("signupBtn");
 
-const chatSelect=document.getElementById("chatSelect");
-const messagesDiv=document.getElementById("messages");
+const chatSelect = document.getElementById("chatSelect");
+const messagesDiv = document.getElementById("messages");
 
-const messageInput=document.getElementById("messageInput");
-const sendBtn=document.getElementById("sendBtn");
+const messageInput = document.getElementById("messageInput");
+const sendBtn = document.getElementById("sendBtn");
 
-const createChatBtn=document.getElementById("createChatBtn");
-const deleteChatBtn=document.getElementById("deleteChatBtn");
+const createChatBtn = document.getElementById("createChatBtn");
+const deleteChatBtn = document.getElementById("deleteChatBtn");
 
-const status=document.getElementById("status");
+const status = document.getElementById("status");
 
-createChatBtn.style.display="none";
-deleteChatBtn.style.display="none";
+createChatBtn.style.display = "none";
+deleteChatBtn.style.display = "none";
 
-signupBtn.onclick=async()=>{
-try{
-const user=await createUserWithEmailAndPassword(auth,emailInput.value,passwordInput.value);
-await setDoc(doc(db,"users",user.user.email),{
-role:"user",
-muted:false,
-banned:false,
-warnings:0
-});
-status.textContent="Account created";
-}catch(e){status.textContent=e.message;}
+signupBtn.onclick = async () => {
+    try{
+        const user = await createUserWithEmailAndPassword(auth,emailInput.value,passwordInput.value);
+        await setDoc(doc(db,"users",user.user.email),{
+            role:"user",
+            muted:false,
+            banned:false,
+            warnings:0
+        });
+        status.textContent="Account created";
+    }catch(e){status.textContent=e.message;}
 };
 
-loginBtn.onclick=async()=>{
-try{
-await signInWithEmailAndPassword(auth,emailInput.value,passwordInput.value);
-}catch(e){status.textContent=e.message;}
+loginBtn.onclick = async () => {
+    try{
+        await signInWithEmailAndPassword(auth,emailInput.value,passwordInput.value);
+    }catch(e){status.textContent=e.message;}
 };
 
-onAuthStateChanged(auth,async user=>{
-if(user){
-loginCard.style.display="none";
-chatCard.style.display="block";
+onAuthStateChanged(auth, async user => {
+    if(user){
+        loginCard.style.display="none";
+        chatCard.style.display="block";
 
-const userDoc=await getDoc(doc(db,"users",user.email));
-const role=userDoc.data().role;
+        const userDoc = await getDoc(doc(db,"users",user.email));
+        const role = userDoc.data().role;
 
-const isOwner=user.email===OWNER;
-const isDev=user.email===DEVELOPER;
-const isAdmin=role==="admin";
+        const isOwner = user.email === OWNER;
+        const isDev = user.email === DEVELOPER;
+        const isAdmin = role === "admin";
 
-if(isOwner||isDev||isAdmin){
-createChatBtn.style.display="block";
-deleteChatBtn.style.display="block";
-}
+        if(isOwner || isDev || isAdmin){
+            createChatBtn.style.display="block";
+            deleteChatBtn.style.display="block";
+        }
 
-loadChats();
-loadMessages();
-}
+        loadChats();
+        loadMessages();
+    }
 });
 
 function loadChats(){
-onSnapshot(collection(db,"chats"),snap=>{
-chatSelect.innerHTML="";
-snap.forEach(chat=>{
-const opt=document.createElement("option");
-opt.value=chat.id;
-opt.text=chat.id;
-chatSelect.appendChild(opt);
-});
-});
+    onSnapshot(collection(db,"chats"),snap=>{
+        chatSelect.innerHTML="";
+        snap.forEach(chat=>{
+            const opt = document.createElement("option");
+            opt.value = chat.id;
+            opt.text = chat.id;
+            chatSelect.appendChild(opt);
+        });
+    });
 }
 
-chatSelect.onchange=()=>{
-currentChat=chatSelect.value;
-loadMessages();
+chatSelect.onchange = () => {
+    currentChat = chatSelect.value;
+    loadMessages();
 };
 
-createChatBtn.onclick=async()=>{
-const name=prompt("Chat name");
-if(!name)return;
-await setDoc(doc(db,"chats",name),{
-createdBy:auth.currentUser.email,
-locked:false
-});
+createChatBtn.onclick = async () => {
+    const name = prompt("Chat name");
+    if(!name) return;
+    await setDoc(doc(db,"chats",name),{
+        createdBy:auth.currentUser.email,
+        locked:false
+    });
 };
 
-deleteChatBtn.onclick=async()=>{
-deleteChat(currentChat);
+deleteChatBtn.onclick = async () => {
+    deleteChat(currentChat);
 };
 
 async function deleteChat(chatName){
-const userDoc=await getDoc(doc(db,"users",auth.currentUser.email));
-const role=userDoc.data().role;
-const isOwner=auth.currentUser.email===OWNER;
-const isDev=auth.currentUser.email===DEVELOPER;
-const isAdmin=role==="admin";
+    const userDoc = await getDoc(doc(db,"users",auth.currentUser.email));
+    const role = userDoc.data().role;
+    const isOwner = auth.currentUser.email === OWNER;
+    const isDev = auth.currentUser.email === DEVELOPER;
+    const isAdmin = role === "admin";
 
-if(!(isOwner||isDev||isAdmin)){
-alert("Only admins or higher can delete chats.");
-return;
-}
+    if(!(isOwner || isDev || isAdmin)){
+        alert("Only admins or higher can delete chats.");
+        return;
+    }
 
-if(!confirm("Delete "+chatName+" permanently?")) return;
+    if(!confirm("Delete "+chatName+" permanently?")) return;
 
-const snap=await getDocs(collection(db,"chats",chatName,"messages"));
-for(const m of snap.docs){
-await deleteDoc(doc(db,"chats",chatName,"messages",m.id));
-}
+    const snap = await getDocs(collection(db,"chats",chatName,"messages"));
+    for(const m of snap.docs){
+        await deleteDoc(doc(db,"chats",chatName,"messages",m.id));
+    }
 
-await deleteDoc(doc(db,"chats",chatName));
+    await deleteDoc(doc(db,"chats",chatName));
 
-messagesDiv.innerHTML="";
-currentChat="";
-loadChats();
+    messagesDiv.innerHTML="";
+    currentChat="";
+    loadChats();
 
-alert("Chat deleted.");
+    alert("Chat deleted.");
 }
 
 function badge(role,email){
-if(email===OWNER) return '<span class="badge owner">OWNER</span>';
-if(email===DEVELOPER) return '<span class="badge dev">DEV</span>';
-if(role==="admin") return '<span class="badge admin">ADMIN</span>';
-if(role==="moderator") return '<span class="badge mod">MOD</span>';
-return "";
+    if(email===OWNER) return '<span class="badge owner">OWNER</span>';
+    if(email===DEVELOPER) return '<span class="badge dev">DEV</span>';
+    if(role==="admin") return '<span class="badge admin">ADMIN</span>';
+    if(role==="moderator") return '<span class="badge mod">MOD</span>';
+    return "";
 }
 
 function loadMessages(){
-const q=query(collection(db,"chats",currentChat,"messages"),orderBy("timestamp"));
-onSnapshot(q,async snap=>{
-messagesDiv.innerHTML="";
-for(const m of snap.docs){
-const data=m.data();
-const userDoc=await getDoc(doc(db,"users",data.sender));
-const role=userDoc.exists()?userDoc.data().role:"user";
-const time=data.timestamp?.toDate().toLocaleTimeString()||"";
-const div=document.createElement("div");
-div.className="message";
-div.innerHTML=badge(role,data.sender)+data.sender+" : "+data.text+'<span class="timestamp">'+time+'</span>';
-messagesDiv.appendChild(div);
-}
-});
-}
-
-sendBtn.onclick=async()=>{
-
-const text=messageInput.value.trim();
-if(!text) return;
-
-const userDoc=await getDoc(doc(db,"users",auth.currentUser.email));
-const me=userDoc.data();
-
-/* COMMAND SYSTEM */
-if(text.startsWith("/")){
-
-const args=text.split(" ");
-
-const isOwner=auth.currentUser.email===OWNER;
-const isDev=auth.currentUser.email===DEVELOPER;
-const isAdmin=me.role==="admin";
-const isMod=me.role==="moderator";
-
-// DELETE CHAT
-if(args[0]==="/delete" && args[1]==="chat"){
-const chatName=args[2];
-if(!chatName){
-alert("Usage: /delete chat [chatname]");
-return;
-}
-await deleteChat(chatName);
-messageInput.value="";
-return;
+    const q = query(collection(db,"chats",currentChat,"messages"),orderBy("timestamp"));
+    onSnapshot(q, async snap => {
+        messagesDiv.innerHTML="";
+        for(const m of snap.docs){
+            const data = m.data();
+            const userDoc = await getDoc(doc(db,"users",data.sender));
+            const role = userDoc.exists()?userDoc.data().role:"user";
+            const time = data.timestamp?.toDate().toLocaleTimeString()||"";
+            const div = document.createElement("div");
+            div.className="message";
+            div.innerHTML = badge(role,data.sender) + data.sender + " : " + data.text + '<span class="timestamp">'+time+'</span>';
+            messagesDiv.appendChild(div);
+        }
+    });
 }
 
-// CLEAR MESSAGES
-if(args[0]==="/clear"){
-if(!(isOwner||isDev||isAdmin||isMod)){
-alert("You don't have permission.");
-return;
-}
-const amount=parseInt(args[1]);
-if(!amount || amount<=0){
-alert("Usage: /clear [number]");
-return;
-}
+sendBtn.onclick = async () => {
+    const text = messageInput.value.trim();
+    if(!text) return;
 
-const q=query(
-collection(db,"chats",currentChat,"messages"),
-orderBy("timestamp","desc")
-);
-const snap=await getDocs(q);
+    const userDoc = await getDoc(doc(db,"users",auth.currentUser.email));
+    const me = userDoc.data();
 
-let count=0;
-for(const m of snap.docs){
-if(count>=amount) break;
-await deleteDoc(doc(db,"chats",currentChat,"messages",m.id));
-count++;
-}
+    const isOwner = auth.currentUser.email === OWNER;
+    const isDev = auth.currentUser.email === DEVELOPER;
+    const isAdmin = me.role === "admin";
+    const isMod = me.role === "moderator";
 
-messageInput.value="";
-return;
-}
+    /* COMMAND SYSTEM */
+    if(text.startsWith("/")){
+        const args = text.split(" ");
 
-}
+        // DELETE CHAT
+        if(args[0]==="/delete" && args[1]==="chat"){
+            const chatName = args[2];
+            if(!chatName){
+                alert("Usage: /delete chat [chatname]");
+                return;
+            }
+            await deleteChat(chatName);
+            messageInput.value="";
+            return;
+        }
 
-/* NORMAL MESSAGE LOGIC */
-if(me.banned){ alert("You are banned."); return; }
-if(me.muted){ alert("You are muted."); return; }
+        // CLEAR MESSAGES
+        if(args[0]==="/clear"){
+            if(!(isOwner || isDev || isAdmin || isMod)){
+                alert("You don't have permission.");
+                return;
+            }
+            const amount = parseInt(args[1]);
+            if(!amount || amount<=0){
+                alert("Usage: /clear [number]");
+                return;
+            }
 
-const chatDoc=await getDoc(doc(db,"chats",currentChat));
-if(chatDoc.data().locked && me.role==="user"){
-alert("Chat locked");
-return;
-}
+            const messagesQuery = query(
+                collection(db,"chats",currentChat,"messages"),
+                orderBy("timestamp","desc")
+            );
+            const snap = await getDocs(messagesQuery);
 
-// Send normal message
-await addDoc(collection(db,"chats",currentChat,"messages"),{
-sender:auth.currentUser.email,
-text:text,
-timestamp:serverTimestamp()
-});
+            if(snap.empty){
+                alert("No messages to clear.");
+                return;
+            }
 
-messageInput.value="";
+            let deleted = 0;
+            for(const docSnap of snap.docs){
+                if(deleted>=amount) break;
+                await deleteDoc(doc(db,"chats",currentChat,"messages",docSnap.id));
+                deleted++;
+            }
+
+            messageInput.value="";
+            return;
+        }
+    }
+
+    /* NORMAL MESSAGE LOGIC */
+    if(me.banned){ alert("You are banned."); return; }
+    if(me.muted){ alert("You are muted."); return; }
+
+    const chatDoc = await getDoc(doc(db,"chats",currentChat));
+    if(!chatDoc.exists()){
+        alert("Chat does not exist.");
+        return;
+    }
+
+    if(chatDoc.data().locked && me.role === "user"){
+        alert("Chat locked");
+        return;
+    }
+
+    await addDoc(collection(db,"chats",currentChat,"messages"),{
+        sender: auth.currentUser.email,
+        text: text,
+        timestamp: serverTimestamp()
+    });
+
+    messageInput.value="";
 };
-
 </script>
 
 </body>
