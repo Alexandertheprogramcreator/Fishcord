@@ -279,8 +279,8 @@ async function deleteChat(chatName){
 }
 
 function badge(role,email){
-    if(email===OWNER) return '<span class="badge owner">OWNER</span>';
-    if(email===DEVELOPER) return '<span class="badge dev">DEV</span>';
+    if(email===OWNER) return '<span class="badge OWNER">OWNER</span>';
+    if(email===DEVELOPER) return '<span class="badge DEVELOPER">DEVELOPER</span>';
     if(role==="admin") return '<span class="badge admin">ADMIN</span>';
     if(role==="moderator") return '<span class="badge mod">MOD</span>';
     return "";
