@@ -2,11 +2,12 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Fischcord</title>
+<title>Fishcord</title>
+
 <style>
 body{
   font-family:Arial;
-  background-image:url("FISHCORD-BACKGROUND.jpg");
+  background-image:url("FICHORD-BACKGROUND.JPG");
   background-size:cover;
   background-position:center;
   background-repeat:no-repeat;
@@ -18,7 +19,7 @@ body{
   height:100vh;
 }
 .card{
-  background:lab(87.77% -85.93 83.22);
+  background:#e6ffe6;
   width:420px;
   padding:25px;
   border-radius:10px;
@@ -50,7 +51,7 @@ button{
   margin-top:10px;
   padding:10px;
   border-radius:6px;
-  background:#001eff;
+  background:#1e1e2f;
   color:white;
 }
 .message{margin-bottom:8px;}
@@ -71,7 +72,9 @@ button{
 }
 </style>
 </head>
+
 <body>
+
 <div id="loginCard" class="card">
   <h3>Sign In / Sign Up</h3>
   <input id="emailInput" placeholder="email">
@@ -80,43 +83,66 @@ button{
   <button class="signup" id="signupBtn">Create Account</button>
   <p id="status"></p>
 </div>
+
 <div id="chatCard" class="card" style="display:none">
   <h3>Fishcord Chat</h3>
+
   <select id="chatSelect"></select>
+  <button id="dmBtn">New DM</button>
   <button id="createChatBtn">Create Chat</button>
   <button id="deleteChatBtn">Delete Chat</button>
+
   <div id="messages"></div>
+
   <input id="messageInput" placeholder="Type message">
   <button class="send" id="sendBtn">Send</button>
 </div>
+
 <script type="module">
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, doc, setDoc, getDoc, addDoc, onSnapshot, query, orderBy, serverTimestamp, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey:"AIzaSyBUkrpmXoPqtmEtxUXBSqTpGW56bCk5LHo",
-  authDomain:"yappatr0n.firebaseapp.com",
-  projectId:"yappatr0n",
-  storageBucket:"yappatr0n.firebasestorage.app",
-  messagingSenderId:"1023173924999",
-  appId:"1:1023173924999:web:3c7cb4444b4433df730022"
+  apiKey:"YOUR_KEY",
+  authDomain:"YOUR_DOMAIN",
+  projectId:"YOUR_PROJECT",
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const OWNER = "vimran60@gmail.com";
+const OWNER = "hananisthebest07@gmail.com";
 const DEVELOPER = "alexanderjsanders@gmail.com";
+
 const bannedWords = [
-  "spam","scam","badword","dick","pussy","nigger","how old are you",
-  "where do you live","child porn","cp","niger","penis","porn",
-  "sex","tits","boobs","pornography, nigga, nig, nigg, nigge"
+  "spam","scam","badword","dick","pussy","nigger",
+  "how old are you","where do you live","child porn",
+  "cp","niger","penis","porn","sex","tits","boobs",
+  "pornography","nigga","nig","nigg","nigge"
 ];
 
 let currentChat = "global";
+let unsubscribeMessages = null;
+const userCache = {};
 
+// ANTISPAM
+const spamTracker = {};
+const SPAM_LIMIT = 5;
+const SPAM_TIME = 5000;
+const MUTE_TIME = 30000;
+
+function checkSpam(email){
+  const now = Date.now();
+  if(!spamTracker[email]) spamTracker[email]=[];
+  spamTracker[email].push(now);
+  spamTracker[email] = spamTracker[email].filter(t=>now-t<SPAM_TIME);
+  return spamTracker[email].length > SPAM_LIMIT;
+}
+
+// UI
 const loginCard = document.getElementById("loginCard");
 const chatCard = document.getElementById("chatCard");
 const emailInput = document.getElementById("emailInput");
@@ -129,202 +155,176 @@ const messageInput = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
 const createChatBtn = document.getElementById("createChatBtn");
 const deleteChatBtn = document.getElementById("deleteChatBtn");
+const dmBtn = document.getElementById("dmBtn");
 const status = document.getElementById("status");
 
 createChatBtn.style.display="none";
 deleteChatBtn.style.display="none";
 
-// SIGNUP
+// AUTH
 signupBtn.onclick = async () => {
-  try {
-    const user = await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
-    await setDoc(doc(db, "users", user.user.email), { role: "user", muted: false, banned: false, warnings: 0 });
-    status.textContent = "Account created";
-  } catch(e) { status.textContent = e.message; }
+  const user = await createUserWithEmailAndPassword(auth,emailInput.value,passwordInput.value);
+  await setDoc(doc(db,"users",user.user.email),{role:"user",muted:false,banned:false});
 };
 
-// LOGIN
 loginBtn.onclick = async () => {
-  try { await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value); }
-  catch(e) { status.textContent = e.message; }
+  await signInWithEmailAndPassword(auth,emailInput.value,passwordInput.value);
 };
 
-// AUTH STATE
 onAuthStateChanged(auth, async user => {
   if(user){
     loginCard.style.display="none";
     chatCard.style.display="block";
+
     const userDoc = await getDoc(doc(db,"users",user.email));
     const role = userDoc.data().role;
-    const isOwner = user.email === OWNER;
-    const isDev = user.email === DEVELOPER;
-    const isAdmin = role === "admin";
-    if(isOwner||isDev||isAdmin){
+
+    if(user.email===OWNER || user.email===DEVELOPER || role==="admin"){
       createChatBtn.style.display="block";
       deleteChatBtn.style.display="block";
     }
+
     loadChats();
     loadMessages();
   }
 });
 
-// LOAD CHATS
+// USER CACHE
+async function getUserRole(email){
+  if(userCache[email]) return userCache[email];
+  const snap = await getDoc(doc(db,"users",email));
+  const role = snap.exists()?snap.data().role:"user";
+  userCache[email]=role;
+  return role;
+}
+
+// CHATS
 function loadChats(){
-  onSnapshot(collection(db,"chats"), snap => {
-    chatSelect.innerHTML = "";
-    snap.forEach(chat => {
+  onSnapshot(collection(db,"chats"), async snap => {
+    chatSelect.innerHTML="";
+
+    for(const chat of snap.docs){
+      const data = chat.data();
+      const members = data.members || [];
+
+      const role = await getUserRole(auth.currentUser.email);
+      const isStaff = auth.currentUser.email===OWNER || auth.currentUser.email===DEVELOPER || role==="admin" || role==="moderator";
+
+      if(data.isPrivate){
+        if(!members.includes(auth.currentUser.email) && !isStaff) continue;
+      }
+
       const opt = document.createElement("option");
       opt.value = chat.id;
-      opt.text = chat.id;
+
+      if(data.isPrivate){
+        const other = members.find(m=>m!==auth.currentUser.email);
+        opt.text = "DM: "+other;
+      }else{
+        opt.text = chat.id;
+      }
+
       chatSelect.appendChild(opt);
-    });
+    }
   });
 }
 
-// CHAT CHANGE
-chatSelect.onchange = () => {
+chatSelect.onchange = ()=>{
   currentChat = chatSelect.value;
   loadMessages();
 };
 
-// CREATE CHAT
-createChatBtn.onclick = async () => {
-  const name = prompt("Chat name");
-  if(!name) return;
-  await setDoc(doc(db,"chats",name), { createdBy: auth.currentUser.email, locked: false });
+// DM
+dmBtn.onclick = async ()=>{
+  const target = prompt("Enter email");
+  if(!target) return;
+
+  const chatId = [auth.currentUser.email,target].sort().join("_");
+
+  await setDoc(doc(db,"chats",chatId),{
+    members:[auth.currentUser.email,target],
+    isPrivate:true
+  },{merge:true});
+
+  currentChat = chatId;
+  loadMessages();
 };
 
-// DELETE CHAT
-deleteChatBtn.onclick = async () => { deleteChat(currentChat); };
-
-async function deleteChat(chatName){
-  const userDoc = await getDoc(doc(db,"users",auth.currentUser.email));
-  const role = userDoc.data().role;
-  const isOwner = auth.currentUser.email === OWNER;
-  const isDev = auth.currentUser.email === DEVELOPER;
-  const isAdmin = role === "admin";
-  if(!(isOwner||isDev||isAdmin)){ alert("Only OWNER, DEVELOPER, or ADMIN can delete chats."); return; }
-  if(!confirm("Delete "+chatName+" permanently?")) return;
-  const snap = await getDocs(collection(db,"chats",chatName,"messages"));
-  for(const m of snap.docs){ await deleteDoc(doc(db,"chats",chatName,"messages",m.id)); }
-  await deleteDoc(doc(db,"chats",chatName));
-  messagesDiv.innerHTML="";
-  currentChat="";
-  loadChats();
-  alert("Chat deleted.");
-}
-
-// BADGE FUNCTION
-function badge(role,email){
-  if(email===OWNER) return '<span class="badge owner">OWNER</span>';
-  if(email===DEVELOPER) return '<span class="badge dev">DEVELOPER</span>';
-  if(role==="admin") return '<span class="badge admin">ADMIN</span>';
-  if(role==="moderator") return '<span class="badge mod">MOD</span>';
-  return "";
-}
-
-// LOAD MESSAGES
+// MESSAGES
 function loadMessages(){
+  if(unsubscribeMessages) unsubscribeMessages();
+
   const q = query(collection(db,"chats",currentChat,"messages"), orderBy("timestamp"));
-  onSnapshot(q, async snap => {
-    messagesDiv.innerHTML = "";
+
+  unsubscribeMessages = onSnapshot(q, async snap=>{
+    messagesDiv.innerHTML="";
+
     for(const m of snap.docs){
       const data = m.data();
-      const lowerText = data.text.toLowerCase();
-      let containsBanned = false;
-      for(const word of bannedWords){ if(lowerText.includes(word.toLowerCase())){ containsBanned=true; break; } }
-      if(containsBanned){ await deleteDoc(doc(db,"chats",currentChat,"messages",m.id)); continue; }
-      const userDoc = await getDoc(doc(db,"users",data.sender));
-      const role = userDoc.exists()?userDoc.data().role:"user";
+
+      const lower = data.text.toLowerCase();
+      if(bannedWords.some(w=>lower.includes(w))){
+        await deleteDoc(doc(db,"chats",currentChat,"messages",m.id));
+        continue;
+      }
+
+      const role = await getUserRole(data.sender);
       const time = data.timestamp?.toDate().toLocaleTimeString()||"";
+
       const div = document.createElement("div");
       div.className="message";
-      div.innerHTML = badge(role,data.sender)+data.sender+" : "+data.text+'<span class="timestamp">'+time+'</span>';
+      div.innerHTML = data.sender+" : "+data.text+" <span class='timestamp'>"+time+"</span>";
+
       messagesDiv.appendChild(div);
     }
   });
 }
 
-// SEND MESSAGE & COMMANDS
-sendBtn.onclick = async () => {
+// SEND
+sendBtn.onclick = async ()=>{
   const text = messageInput.value.trim();
   if(!text) return;
-  const userDoc = await getDoc(doc(db,"users",auth.currentUser.email));
-  const me = userDoc.data();
-  const isOwner = auth.currentUser.email === OWNER;
-  const isDev = auth.currentUser.email === DEVELOPER;
-  const isAdmin = me.role === "admin";
-  const isMod = me.role === "moderator";
-  const lowerText = text.toLowerCase();
-  for(const word of bannedWords){ if(lowerText.includes(word.toLowerCase())){ alert("Message contains banned words."); messageInput.value=""; return; } }
 
-  // COMMANDS
-  if(text.startsWith("/")){
-    const args = text.split(" ");
+  const meDoc = await getDoc(doc(db,"users",auth.currentUser.email));
+  const me = meDoc.data();
 
-    // PROMOTE
-    if(args[0]==="/promote"){
-      if(!(isOwner||isDev)){ alert("Only OWNER or DEVELOPER can promote users."); return; }
-      const targetEmail = args[1]; const newRole = args[2];
-      if(!targetEmail || !newRole){ alert("Usage: /promote [email] [role]"); return; }
-      const validRoles = ["user","moderator","admin"];
-      if(!validRoles.includes(newRole.toLowerCase())){ alert("Invalid role."); return; }
-      if(targetEmail===OWNER||targetEmail===DEVELOPER){ alert("Cannot change role of OWNER or DEVELOPER."); return; }
-      const targetDoc = doc(db,"users",targetEmail);
-      const targetSnapshot = await getDoc(targetDoc);
-      if(!targetSnapshot.exists()){ alert("User not found."); return; }
-      await setDoc(targetDoc, { role: newRole.toLowerCase() }, { merge:true });
-      alert(targetEmail+" promoted to "+newRole.toUpperCase());
-      messageInput.value=""; return;
-    }
+  if(me.banned){ alert("Banned"); return; }
+  if(me.muted){ alert("Muted"); return; }
 
-    // DELETE CHAT
-    if(args[0]==="/delete" && args[1]==="chat"){
-      if(!(isOwner||isDev||isAdmin)){ alert("No permission"); return; }
-      const chatName = args[2];
-      if(!chatName){ alert("Usage: /delete chat [chatname]"); return; }
-      await deleteChat(chatName); messageInput.value=""; return;
-    }
+  // ANTISPAM
+  if(checkSpam(auth.currentUser.email)){
+    await setDoc(doc(db,"users",auth.currentUser.email),{muted:true},{merge:true});
+    alert("Spam detected. Muted 30s.");
+    setTimeout(async ()=>{
+      await setDoc(doc(db,"users",auth.currentUser.email),{muted:false},{merge:true});
+    },MUTE_TIME);
+    return;
+  }
 
-    // CLEAR
-    if(args[0]==="/clear"){
-      if(!(isOwner||isDev||isAdmin||isMod)){ alert("No permission"); return; }
-      const amount = parseInt(args[1]);
-      if(!amount || amount<=0){ alert("Usage: /clear [number]"); return; }
-      const messagesQuery = query(collection(db,"chats",currentChat,"messages"), orderBy("timestamp","desc"));
-      const snap = await getDocs(messagesQuery);
-      let deleted=0;
-      for(const docSnap of snap.docs){ if(deleted>=amount) break; await deleteDoc(doc(db,"chats",currentChat,"messages",docSnap.id)); deleted++; }
-      messageInput.value=""; return;
-    }
+  // PRIVATE CHAT CHECK
+  const chatDoc = await getDoc(doc(db,"chats",currentChat));
+  const chatData = chatDoc.data();
 
-    // MUTE
-    if(args[0]==="/mute"){
-      if(!(isOwner||isDev||isAdmin||isMod)){ alert("No permission"); return; }
-      const email=args[1];
-      if(!email){ alert("Usage: /mute user@email.com"); return; }
-      if(email===OWNER||email===DEVELOPER){ alert("Cannot mute OWNER or DEVELOPER."); return; }
-      await setDoc(doc(db,"users",email),{muted:true},{merge:true});
-      alert(email+" has been muted."); messageInput.value=""; return;
-    }
+  if(chatData?.isPrivate){
+    const members = chatData.members || [];
+    const role = await getUserRole(auth.currentUser.email);
+    const isStaff = auth.currentUser.email===OWNER || auth.currentUser.email===DEVELOPER || role==="admin" || role==="moderator";
 
-    // UNMUTE
-    if(args[0]==="/unmute"){
-      if(!(isOwner||isDev||isAdmin||isMod)){ alert("No permission"); return; }
-      const email=args[1];
-      if(!email){ alert("Usage: /unmute user@email.com"); return; }
-      if(email===OWNER||email===DEVELOPER){ alert("Cannot unmute OWNER or DEVELOPER."); return; }
-      await setDoc(doc(db,"users",email),{muted:false},{merge:true});
-      alert(email+" has been unmuted."); messageInput.value=""; return;
+    if(!members.includes(auth.currentUser.email) && !isStaff){
+      alert("No permission");
+      return;
     }
   }
 
-  if(me.banned){ alert("You are banned."); return; }
-  if(me.muted){ alert("You are muted."); return; }
+  await addDoc(collection(db,"chats",currentChat,"messages"),{
+    sender:auth.currentUser.email,
+    text:text,
+    timestamp:serverTimestamp()
+  });
 
-  await addDoc(collection(db,"chats",currentChat,"messages"), { sender: auth.currentUser.email, text: text, timestamp: serverTimestamp() });
   messageInput.value="";
 };
+
 </script>
 </body>
 </html>
