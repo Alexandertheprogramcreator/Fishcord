@@ -79,7 +79,7 @@ button{
 <div id="chatCard" class="card" style="display:none">
   <h3>Fishcord Chat</h3>
 
-<select id="chatSelect"></select> <button id="dmBtn">New DM</button> <button id="createChatBtn">Create Chat</button> <button id="deleteChatBtn">Delete Chat</button>
+<select id="chatSelect"></select>
 
   <div id="messages"></div>
 
@@ -93,17 +93,20 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, doc, setDoc, getDoc, addDoc, onSnapshot, query, orderBy, serverTimestamp, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey:"YOUR_KEY",
-  authDomain:"YOUR_DOMAIN",
-  projectId:"YOUR_ID",
-};
+const firebaseConfig = { apiKey:"AIzaSyBUkrpmXoPqtmEtxUXBSqTpGW56bCk5LHo", authDomain:"yappatr0n.firebaseapp.com", projectId:"yappatr0n", storageBucket:"yappatr0n.firebasestorage.app", messagingSenderId:"1023173924999", appId:"1:1023173924999:web:3c7cb4444b4433df730022" };
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
 const OWNER = "hananisthebest07@gmail.com";
 const DEVELOPER = "alexanderjsanders@gmail.com";
+
+const bannedWords = [
+  "spam","scam","badword","dick","pussy","nigger",
+  "how old are you","where do you live","child porn",
+  "cp","penis","porn","sex","tits","boobs"
+];
 
 let currentChat = "global";
 let unsubscribeMessages = null;
@@ -115,11 +118,9 @@ const emailInput = document.getElementById("emailInput");
 const passwordInput = document.getElementById("passwordInput");
 const loginBtn = document.getElementById("loginBtn");
 const signupBtn = document.getElementById("signupBtn");
-const chatSelect = document.getElementById("chatSelect");
 const messagesDiv = document.getElementById("messages");
 const messageInput = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
-const status = document.getElementById("status");
 
 // AUTH
 signupBtn.onclick = async () => {
@@ -131,7 +132,7 @@ loginBtn.onclick = async () => {
   await signInWithEmailAndPassword(auth,emailInput.value,passwordInput.value);
 };
 
-onAuthStateChanged(auth, async user => {
+onAuthStateChanged(auth, user => {
   if(user){
     loginCard.style.display="none";
     chatCard.style.display="block";
@@ -139,91 +140,47 @@ onAuthStateChanged(auth, async user => {
   }
 });
 
-async function getUserRole(email){
-  const snap = await getDoc(doc(db,"users",email));
-  return snap.exists()?snap.data().role:"user";
-}
-
 // LOAD MESSAGES
 function loadMessages(){
   if(unsubscribeMessages) unsubscribeMessages();
 
   const q = query(collection(db,"chats",currentChat,"messages"), orderBy("timestamp"));
 
-  unsubscribeMessages = onSnapshot(q, snap=>{
+  unsubscribeMessages = onSnapshot(q, async snap=>{
     messagesDiv.innerHTML="";
-    snap.forEach(docSnap=>{
-      const data = docSnap.data();
+
+    for(const m of snap.docs){
+      const data = m.data();
+
+      // BACKUP FILTER (delete if slipped through)
+      const lower = data.text.toLowerCase();
+      if(bannedWords.some(w => lower.includes(w))){
+        await deleteDoc(doc(db,"chats",currentChat,"messages",m.id));
+        continue;
+      }
+
       const time = data.timestamp?.toDate().toLocaleTimeString()||"";
       const div = document.createElement("div");
       div.className="message";
       div.innerHTML = data.sender+" : "+data.text+" <span class='timestamp'>"+time+"</span>";
       messagesDiv.appendChild(div);
-    });
+    }
   });
 }
 
-// SEND + COMMANDS
+// SEND MESSAGE
 sendBtn.onclick = async ()=>{
   const text = messageInput.value.trim();
   if(!text) return;
 
-  const role = await getUserRole(auth.currentUser.email);
-  const isStaff =
-    auth.currentUser.email===OWNER ||
-    auth.currentUser.email===DEVELOPER ||
-    role==="admin" ||
-    role==="moderator";
+  const lower = text.toLowerCase();
 
-  // COMMANDS
-  if(text.startsWith("/")){
-    const args = text.split(" ");
-    const command = args[0].toLowerCase();
-
-    if(command === "/clear"){
-      if(!isStaff) return alert("No permission");
-
-      const amount = parseInt(args[1]);
-      const q = query(collection(db,"chats",currentChat,"messages"), orderBy("timestamp","desc"));
-      const snap = await getDocs(q);
-
-      let count = 0;
-      for(const d of snap.docs){
-        if(count >= amount) break;
-        await deleteDoc(d.ref);
-        count++;
-      }
-      return;
-    }
-
-    if(command === "/delete"){
-      if(!isStaff) return alert("No permission");
-
-      const target = args.slice(1).join(" ").toLowerCase();
-      const snap = await getDocs(collection(db,"chats",currentChat,"messages"));
-
-      for(const d of snap.docs){
-        if(d.data().text.toLowerCase() === target){
-          await deleteDoc(d.ref);
-        }
-      }
-      return;
-    }
-
-    if(command === "/mute"){
-      if(!isStaff) return alert("No permission");
-      await setDoc(doc(db,"users",args[1]),{muted:true},{merge:true});
-      return;
-    }
-
-    if(command === "/unmute"){
-      if(!isStaff) return alert("No permission");
-      await setDoc(doc(db,"users",args[1]),{muted:false},{merge:true});
-      return;
-    }
+  // MAIN FILTER (blocks before sending)
+  if(bannedWords.some(word => lower.includes(word))){
+    alert("Message blocked: inappropriate content detected");
+    return;
   }
 
-  // NORMAL MESSAGE
   await addDoc(collection(db,"chats",currentChat,"messages"),{
     sender:auth.currentUser.email,
     text:text,
