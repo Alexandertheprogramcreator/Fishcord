@@ -61,6 +61,7 @@ button{
   margin-right:4px;
 }
 .owner{background:red;}
+.coowner{background:#ff4da6;}
 .dev{background:purple;}
 .admin{background:orange;}
 .mod{background:green;}
@@ -108,7 +109,9 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 const OWNER = "vimran60@gmail.com";
+const CO_OWNER = "parkerpatrickfrog789@gmail.com";
 const DEVELOPER = "alexanderjsanders@gmail.com";
+
 const bannedWords = [
   "spam","scam","badword","dick","pussy","nigger","how old are you",
   "where do you live","child porn","cp","niger","penis","porn",
@@ -156,7 +159,7 @@ onAuthStateChanged(auth, async user => {
     chatCard.style.display="block";
     const userDoc = await getDoc(doc(db,"users",user.email));
     const role = userDoc.data().role;
-    const isOwner = user.email === OWNER;
+    const isOwner = user.email === OWNER || user.email === CO_OWNER;
     const isDev = user.email === DEVELOPER;
     const isAdmin = role === "admin";
     if(isOwner||isDev||isAdmin){
@@ -200,7 +203,7 @@ deleteChatBtn.onclick = async () => { deleteChat(currentChat); };
 async function deleteChat(chatName){
   const userDoc = await getDoc(doc(db,"users",auth.currentUser.email));
   const role = userDoc.data().role;
-  const isOwner = auth.currentUser.email === OWNER;
+  const isOwner = auth.currentUser.email === OWNER || auth.currentUser.email === CO_OWNER;
   const isDev = auth.currentUser.email === DEVELOPER;
   const isAdmin = role === "admin";
   if(!(isOwner||isDev||isAdmin)){ alert("Only OWNER, DEVELOPER, or ADMIN can delete chats."); return; }
@@ -217,6 +220,7 @@ async function deleteChat(chatName){
 // BADGE FUNCTION
 function badge(role,email){
   if(email===OWNER) return '<span class="badge owner">OWNER</span>';
+  if(email===CO_OWNER) return '<span class="badge coowner">CO-OWNER</span>';
   if(email===DEVELOPER) return '<span class="badge dev">DEVELOPER</span>';
   if(role==="admin") return '<span class="badge admin">ADMIN</span>';
   if(role==="moderator") return '<span class="badge mod">MOD</span>';
@@ -251,73 +255,12 @@ sendBtn.onclick = async () => {
   if(!text) return;
   const userDoc = await getDoc(doc(db,"users",auth.currentUser.email));
   const me = userDoc.data();
-  const isOwner = auth.currentUser.email === OWNER;
+  const isOwner = auth.currentUser.email === OWNER || auth.currentUser.email === CO_OWNER;
   const isDev = auth.currentUser.email === DEVELOPER;
   const isAdmin = me.role === "admin";
   const isMod = me.role === "moderator";
   const lowerText = text.toLowerCase();
   for(const word of bannedWords){ if(lowerText.includes(word.toLowerCase())){ alert("Message contains banned words."); messageInput.value=""; return; } }
-
-  // COMMANDS
-  if(text.startsWith("/")){
-    const args = text.split(" ");
-
-    // PROMOTE
-    if(args[0]==="/promote"){
-      if(!(isOwner||isDev)){ alert("Only OWNER or DEVELOPER can promote users."); return; }
-      const targetEmail = args[1]; const newRole = args[2];
-      if(!targetEmail || !newRole){ alert("Usage: /promote [email] [role]"); return; }
-      const validRoles = ["user","moderator","admin"];
-      if(!validRoles.includes(newRole.toLowerCase())){ alert("Invalid role."); return; }
-      if(targetEmail===OWNER||targetEmail===DEVELOPER){ alert("Cannot change role of OWNER or DEVELOPER."); return; }
-      const targetDoc = doc(db,"users",targetEmail);
-      const targetSnapshot = await getDoc(targetDoc);
-      if(!targetSnapshot.exists()){ alert("User not found."); return; }
-      await setDoc(targetDoc, { role: newRole.toLowerCase() }, { merge:true });
-      alert(targetEmail+" promoted to "+newRole.toUpperCase());
-      messageInput.value=""; return;
-    }
-
-    // DELETE CHAT
-    if(args[0]==="/delete" && args[1]==="chat"){
-      if(!(isOwner||isDev||isAdmin)){ alert("No permission"); return; }
-      const chatName = args[2];
-      if(!chatName){ alert("Usage: /delete chat [chatname]"); return; }
-      await deleteChat(chatName); messageInput.value=""; return;
-    }
-
-    // CLEAR
-    if(args[0]==="/clear"){
-      if(!(isOwner||isDev||isAdmin||isMod)){ alert("No permission"); return; }
-      const amount = parseInt(args[1]);
-      if(!amount || amount<=0){ alert("Usage: /clear [number]"); return; }
-      const messagesQuery = query(collection(db,"chats",currentChat,"messages"), orderBy("timestamp","desc"));
-      const snap = await getDocs(messagesQuery);
-      let deleted=0;
-      for(const docSnap of snap.docs){ if(deleted>=amount) break; await deleteDoc(doc(db,"chats",currentChat,"messages",docSnap.id)); deleted++; }
-      messageInput.value=""; return;
-    }
-
-    // MUTE
-    if(args[0]==="/mute"){
-      if(!(isOwner||isDev||isAdmin||isMod)){ alert("No permission"); return; }
-      const email=args[1];
-      if(!email){ alert("Usage: /mute user@email.com"); return; }
-      if(email===OWNER||email===DEVELOPER){ alert("Cannot mute OWNER or DEVELOPER."); return; }
-      await setDoc(doc(db,"users",email),{muted:true},{merge:true});
-      alert(email+" has been muted."); messageInput.value=""; return;
-    }
-
-    // UNMUTE
-    if(args[0]==="/unmute"){
-      if(!(isOwner||isDev||isAdmin||isMod)){ alert("No permission"); return; }
-      const email=args[1];
-      if(!email){ alert("Usage: /unmute user@email.com"); return; }
-      if(email===OWNER||email===DEVELOPER){ alert("Cannot unmute OWNER or DEVELOPER."); return; }
-      await setDoc(doc(db,"users",email),{muted:false},{merge:true});
-      alert(email+" has been unmuted."); messageInput.value=""; return;
-    }
-  }
 
   if(me.banned){ alert("You are banned."); return; }
   if(me.muted){ alert("You are muted."); return; }
