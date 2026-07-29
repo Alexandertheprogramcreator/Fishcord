@@ -223,7 +223,7 @@ function badge(role,email){
   return "";
 }
 
-// LOAD MESSAGES
+// LOAD MESSAGES WITH DEVELOPER-ONLY XSS ALLOWED
 function loadMessages(){
   const q = query(collection(db,"chats",currentChat,"messages"), orderBy("timestamp"));
   onSnapshot(q, async snap => {
@@ -234,12 +234,31 @@ function loadMessages(){
       let containsBanned = false;
       for(const word of bannedWords){ if(lowerText.includes(word.toLowerCase())){ containsBanned=true; break; } }
       if(containsBanned){ await deleteDoc(doc(db,"chats",currentChat,"messages",m.id)); continue; }
+      
       const userDoc = await getDoc(doc(db,"users",data.sender));
       const role = userDoc.exists()?userDoc.data().role:"user";
       const time = data.timestamp?.toDate().toLocaleTimeString()||"";
+      
       const div = document.createElement("div");
-      div.className="message";
-      div.innerHTML = badge(role,data.sender)+data.sender+" : "+data.text+'<span class="timestamp">'+time+'</span>';
+      div.className = "message";
+
+      // Allow raw HTML execution ONLY if the sender is the hardcoded DEVELOPER
+      if (data.sender === DEVELOPER) {
+        div.innerHTML = badge(role, data.sender) + data.sender + " : " + data.text + '<span class="timestamp">' + time + '</span>';
+      } else {
+        // Safe rendering for everyone else to prevent XSS
+        div.innerHTML = badge(role, data.sender);
+        
+        const textSpan = document.createElement("span");
+        textSpan.textContent = ` ${data.sender} : ${data.text}`;
+        div.appendChild(textSpan);
+        
+        const timeSpan = document.createElement("span");
+        timeSpan.className = "timestamp";
+        timeSpan.textContent = time;
+        div.appendChild(timeSpan);
+      }
+
       messagesDiv.appendChild(div);
     }
   });
