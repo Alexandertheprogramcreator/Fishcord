@@ -1,106 +1,166 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Fischcord</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fishcord</title>
 <style>
-body{
-  font-family:Arial;
-  background-image:url("FISHCORD-BACKGROUND.jpg");
-  background-size:cover;
-  background-position:center;
-  background-repeat:no-repeat;
-  background-attachment:fixed;
-  margin:0;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-}
-.card{
-  background:lab(87.77% -85.93 83.22);
-  width:420px;
-  padding:25px;
-  border-radius:10px;
-  box-shadow:0 4px 12px rgba(0,0,0,0.15);
-}
-input,select{
-  width:100%;
-  padding:10px;
-  margin-top:10px;
-  border:1px solid #ccc;
-  border-radius:6px;
-}
-button{
-  width:100%;
-  padding:10px;
-  margin-top:10px;
-  border:none;
-  border-radius:6px;
-  font-weight:bold;
-  cursor:pointer;
-}
-.login{background:#2d6cdf;color:white;}
-.signup{background:#2ecc71;color:white;}
-.send{background:#2d6cdf;color:white;}
-#messages{
-  height:300px;
-  overflow-y:auto;
-  border:1px solid #ddd;
-  margin-top:10px;
-  padding:10px;
-  border-radius:6px;
-  background:#001eff;
-  color:white;
-}
-.message{margin-bottom:8px;}
-.badge{
-  font-size:10px;
-  padding:2px 6px;
-  border-radius:4px;
-  margin-right:4px;
-}
-.owner{background:red;}
-.dev{background:purple;}
-.admin{background:orange;}
-.mod{background:green;}
-.timestamp{
-  font-size:10px;
-  opacity:0.6;
-  margin-left:5px;
-}
+:root{--green:#36d399;--blue:#2d6cdf;--ink:#142033;--muted:#64748b;--panel:#fff;--line:#dbe3ee}
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:#0c1b2a url("FISHCORD-BACKGROUND.jpg") center/cover fixed no-repeat;margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;color:var(--ink)}
+.card{background:rgba(229,255,220,.96);width:min(100%,480px);padding:25px;border-radius:14px;box-shadow:0 8px 30px #0004}
+input,select,textarea{width:100%;padding:11px;margin-top:9px;border:1px solid #cbd5e1;border-radius:7px;font:inherit}
+button{padding:11px 14px;margin-top:9px;border:0;border-radius:7px;font-weight:700;cursor:pointer}
+button:disabled{opacity:.55;cursor:not-allowed}
+.login{background:#2d6cdf;color:white;width:100%}.signup{background:#2ecc71;color:white;width:100%}.send{background:#2d6cdf;color:white;width:100%}
+#messages{height:300px;overflow-y:auto;border:1px solid #ddd;margin-top:10px;padding:10px;border-radius:8px;background:#001eff;color:white;overflow-wrap:anywhere}
+.message{margin-bottom:9px;line-height:1.4}.badge{font-size:10px;padding:3px 6px;border-radius:4px;margin-right:5px;color:white;font-weight:bold}
+.owner{background:#d62828}.dev{background:#7836b5}.admin{background:#d97706}.mod{background:#15803d}
+.timestamp{font-size:10px;opacity:.65;margin-left:6px}
+#chatCard{width:min(100%,650px)}.chat-toolbar{display:flex;gap:8px}.chat-toolbar>*{flex:1}
+.small-note{font-size:12px;color:#475569}.hidden{display:none!important}
+#trollOverlay{position:fixed;inset:0;z-index:10000;background:#07111fee;color:#f8fafc;display:none;overflow:auto;padding:22px}
+.troll-shell{max-width:1050px;margin:20px auto;background:#111d2d;border:1px solid #334155;border-radius:18px;box-shadow:0 20px 70px #0008;overflow:hidden}
+.troll-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid #334155;gap:12px}
+.troll-brand{font-size:20px;font-weight:800}.troll-brand span{color:#5ee0b0}.troll-head small{display:block;color:#94a3b8;font-size:10px;letter-spacing:1.5px;margin-top:4px}
+.troll-layout{display:grid;grid-template-columns:210px 1fr;min-height:560px}
+.troll-nav{padding:18px;border-right:1px solid #334155;background:#0d1725}
+.troll-nav button{width:100%;text-align:left;background:transparent;color:#cbd5e1;margin:3px 0;padding:12px}
+.troll-nav button.active,.troll-nav button:hover{background:#20334b;color:white}
+.troll-main{padding:24px}.troll-main h2{margin:0 0 6px;font-size:25px}.muted{color:#94a3b8;font-size:13px}
+.troll-field{margin:18px 0}.troll-field label{display:block;color:#cbd5e1;font-size:12px;font-weight:bold;letter-spacing:.6px;margin-bottom:7px}
+.troll-main select,.troll-main input{background:#1b2b40;color:white;border:1px solid #40516a}
+.troll-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px}
+.troll-tile{background:#1a2a3e;border:1px solid #334b66;border-radius:12px;padding:15px;text-align:left;color:white;margin:0;min-height:108px}
+.troll-tile strong{display:block;margin:7px 0}.troll-tile span{display:block;color:#aabbd0;font-size:12px;line-height:1.4;font-weight:normal}
+.troll-tile:hover{border-color:#5ee0b0;transform:translateY(-1px)}
+.primary{background:#247a63;color:white}.secondary{background:#334155;color:white}.danger{background:#9f3434;color:white}
+.troll-actions{display:flex;gap:8px;flex-wrap:wrap}.troll-actions button{margin-top:0}
+.troll-log{background:#0b1522;border:1px solid #334155;border-radius:10px;padding:12px;max-height:240px;overflow:auto;color:#cbd5e1;font-size:13px}
+.troll-log p{margin:5px 0;border-bottom:1px solid #233247;padding:6px 0}
+.troll-close{background:#29384d;color:white;margin:0}
+#prankLayer{position:fixed;inset:0;z-index:9998;display:none;align-items:center;justify-content:center;padding:20px;background:#071426eF;color:white;text-align:center;font-family:Arial}
+#prankLayer .prank-box{max-width:520px;background:#15263c;border:1px solid #45617d;border-radius:16px;padding:28px;box-shadow:0 15px 60px #0008}
+#prankLayer h1{font-size:clamp(24px,5vw,40px)}#prankLayer p{color:#cbd5e1;line-height:1.5}
+#prankLayer button{background:#36d399;color:#09251d}
+#prankToast{position:fixed;right:18px;bottom:18px;z-index:9997;max-width:340px;background:#15263c;color:white;border:1px solid #4b6580;border-radius:12px;padding:16px;box-shadow:0 10px 35px #0008;display:none}
+#prankToast button{background:#36d399;color:#09251d}
+.fish-rain{position:fixed;inset:0;z-index:9996;pointer-events:none;overflow:hidden;font-size:34px}
+.fish-rain span{position:absolute;animation:swim 5s linear forwards}
+@keyframes swim{from{transform:translateX(-15vw) rotate(-10deg)}to{transform:translateX(115vw) rotate(10deg)}}
+@media(max-width:700px){body{padding:10px}.troll-layout{grid-template-columns:1fr}.troll-nav{display:flex;overflow:auto;border-right:0;border-bottom:1px solid #334155;padding:8px}.troll-nav button{white-space:nowrap;width:auto}.troll-main{padding:18px}.troll-grid{grid-template-columns:1fr}.troll-shell{margin:0}.chat-toolbar{flex-direction:column}}
 </style>
 </head>
 <body>
 <div id="loginCard" class="card">
-  <h3>Sign In / Sign Up</h3>
-  <input id="emailInput" placeholder="email">
-  <input id="passwordInput" type="password" placeholder="password">
+  <h2>🐟 Fishcord</h2><h3>Sign In / Sign Up</h3>
+  <input id="emailInput" type="email" autocomplete="email" placeholder="Email">
+  <input id="passwordInput" type="password" autocomplete="current-password" placeholder="Password">
   <button class="login" id="loginBtn">Login</button>
   <button class="signup" id="signupBtn">Create Account</button>
-  <p id="status"></p>
+  <p id="status" role="status"></p>
 </div>
-<div id="chatCard" class="card" style="display:none">
-  <h3>Fishcord Chat</h3>
-  <select id="chatSelect"></select>
-  <button id="createChatBtn">Create Chat</button>
-  <button id="deleteChatBtn">Delete Chat</button>
-  <div id="messages"></div>
-  <input id="messageInput" placeholder="Type message">
+
+<div id="chatCard" class="card hidden">
+  <div class="chat-toolbar">
+    <h2 style="margin:5px 0">🐟 Fishcord Chat</h2>
+    <button id="logoutBtn" class="secondary">Log out</button>
+  </div>
+  <select id="chatSelect" aria-label="Chat room"></select>
+  <div class="chat-toolbar">
+    <button id="createChatBtn" class="secondary hidden">Create Chat</button>
+    <button id="deleteChatBtn" class="secondary hidden">Delete Chat</button>
+  </div>
+  <div id="messages" aria-live="polite"></div>
+  <input id="messageInput" placeholder="Type a message or /help" maxlength="2000">
   <button class="send" id="sendBtn">Send</button>
+  <p class="small-note">Tip: type /help to see available commands.</p>
 </div>
+
+<div id="trollOverlay" aria-hidden="true">
+ <div class="troll-shell">
+  <header class="troll-head">
+   <div><div class="troll-brand">🐟 FISHCORD <span>DEV TOOLS</span></div><small>DEVELOPER TROLL CONTROL CENTER</small></div>
+   <button class="troll-close" id="closeTrollBtn">✕ Close</button>
+  </header>
+  <div class="troll-layout">
+   <nav class="troll-nav" aria-label="Troll dashboard sections">
+    <button class="active" data-tab="overview">🏠 Overview</button>
+    <button data-tab="screen">🖥 Screen effects</button>
+    <button data-tab="connection">📡 Connection</button>
+    <button data-tab="chat">💬 Chat pranks</button>
+    <button data-tab="history">📜 History</button>
+   </nav>
+   <main class="troll-main">
+    <section class="troll-tab" id="tab-overview">
+     <h2>Troll Control Center</h2><p class="muted">Choose a Fishcord user, pick a harmless temporary prank, and send it to their active session.</p>
+     <div class="troll-field"><label for="trollTarget">TARGET USER</label><select id="trollTarget"><option value="">Loading users...</option></select></div>
+     <div class="troll-grid">
+      <button class="troll-tile" data-action="fish"><strong>🐟 Fish invasion</strong><span>A school of fish swims across their screen.</span></button>
+      <button class="troll-tile" data-action="invert"><strong>🌈 Invert colors</strong><span>Temporarily invert the page colors.</span></button>
+      <button class="troll-tile" data-action="disconnect"><strong>📡 Fake disconnect</strong><span>A dismissible pretend connection-lost screen.</span></button>
+      <button class="troll-tile" data-action="loading"><strong>⏳ Fake loading</strong><span>A silly temporary loading screen.</span></button>
+      <button class="troll-tile" data-action="warning"><strong>⚠️ Fake warning</strong><span>A clearly playful Fishcord warning.</span></button>
+      <button class="troll-tile" data-action="toast"><strong>🔔 Fake notification</strong><span>Show a funny notification toast.</span></button>
+     </div>
+    </section>
+    <section class="troll-tab hidden" id="tab-screen">
+     <h2>Screen effects</h2><p class="muted">Visual-only effects that automatically end.</p>
+     <div class="troll-field"><label for="effectTarget">TARGET USER</label><select class="targetMirror" id="effectTarget"></select></div>
+     <div class="troll-grid">
+      <button class="troll-tile" data-action="fish"><strong>🐟 Fish invasion</strong><span>Animated fish for a few seconds.</span></button>
+      <button class="troll-tile" data-action="invert"><strong>🌈 Invert colors</strong><span>Invert the page for ten seconds.</span></button>
+      <button class="troll-tile" data-action="loading"><strong>⏳ Fake loading</strong><span>Dismissible loading gag.</span></button>
+     </div>
+    </section>
+    <section class="troll-tab hidden" id="tab-connection">
+     <h2>Connection pranks</h2><p class="muted">These are visual simulations only; they do not disconnect, close, or navigate the user's browser.</p>
+     <div class="troll-field"><label for="connectionTarget">TARGET USER</label><select class="targetMirror" id="connectionTarget"></select></div>
+     <div class="troll-grid">
+      <button class="troll-tile" data-action="disconnect"><strong>📡 Fake disconnect</strong><span>Show a simulated connection-lost screen.</span></button>
+      <button class="troll-tile" data-action="warning"><strong>⚠️ Fake system warning</strong><span>Show a harmless joke alert.</span></button>
+     </div>
+    </section>
+    <section class="troll-tab hidden" id="tab-chat">
+     <h2>Chat pranks</h2><p class="muted">Send a private, temporary joke notification to a selected user.</p>
+     <div class="troll-field"><label for="chatTarget">TARGET USER</label><select class="targetMirror" id="chatTarget"></select></div>
+     <div class="troll-field"><label for="customPrank">CUSTOM MESSAGE</label><input id="customPrank" maxlength="180" placeholder="A wild fish has entered your chat!"></div>
+     <div class="troll-actions"><button class="primary" id="sendCustomPrank">Send joke notification</button></div>
+     <p class="muted">No impersonation of real system or security alerts.</p>
+    </section>
+    <section class="troll-tab hidden" id="tab-history">
+     <h2>Action history</h2><p class="muted">Recent actions from this dashboard on this device.</p>
+     <div class="troll-log" id="trollHistory"><p>No actions yet.</p></div>
+    </section>
+   </main>
+  </div>
+ </div>
+</div>
+
+<div id="prankLayer" role="dialog" aria-modal="true" aria-live="assertive">
+ <div class="prank-box"><h1 id="prankTitle">Fishcord prank</h1><p id="prankMessage"></p><button id="dismissPrank">Back to Fishcord</button></div>
+</div>
+<div id="prankToast" role="status"><div id="toastMessage"></div><button id="dismissToast">Dismiss</button></div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, doc, setDoc, getDoc, addDoc, onSnapshot, query, orderBy, serverTimestamp, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  onAuthStateChanged, signOut
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  getFirestore, collection, doc, setDoc, getDoc, addDoc, onSnapshot,
+  query, orderBy, serverTimestamp, getDocs, deleteDoc, limit
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+/* Firebase project configuration retained from the original Fishcord source. */
 const firebaseConfig = {
-  apiKey:"AIzaSyBUkrpmXoPqtmEtxUXBSqTpGW56bCk5LHo",
-  authDomain:"yappatr0n.firebaseapp.com",
-  projectId:"yappatr0n",
-  storageBucket:"yappatr0n.firebasestorage.app",
-  messagingSenderId:"1023173924999",
-  appId:"1:1023173924999:web:3c7cb4444b4433df730022"
+  apiKey: "AIzaSyBUkrpmXoPqtmEtxUXBSqTpGW56bCk5LHo",
+  authDomain: "yappatr0n.firebaseapp.com",
+  projectId: "yappatr0n",
+  storageBucket: "yappatr0n.firebasestorage.app",
+  messagingSenderId: "1023173924999",
+  appId: "1:1023173924999:web:3c7cb4444b4433df730022"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -111,239 +171,420 @@ const OWNER = "vimran60@gmail.com";
 const DEVELOPER = "alexanderjsanders@gmail.com";
 const bannedWords = [
   "spam","scam","badword","dick","pussy","nigger","how old are you",
-  "where do you live","child porn","cp","niger","penis","porn",
-  "sex","tits","boobs","pornography, nigga, nig, nigg, nigge"
+  "where do you live","child porn","cp","niger","penis","porn","sex",
+  "tits","boobs","pornography","nigga","nig","nigg","nigge"
 ];
 
 let currentChat = "global";
+let currentUserData = null;
+let messageUnsubscribe = null;
+let chatsUnsubscribe = null;
+let trollUnsubscribe = null;
+let currentUserUnsubscribe = null;
+let trollHistory = [];
+let lastTrollId = sessionStorage.getItem("lastTroll") || "";
 
-const loginCard = document.getElementById("loginCard");
-const chatCard = document.getElementById("chatCard");
-const emailInput = document.getElementById("emailInput");
-const passwordInput = document.getElementById("passwordInput");
-const loginBtn = document.getElementById("loginBtn");
-const signupBtn = document.getElementById("signupBtn");
-const chatSelect = document.getElementById("chatSelect");
-const messagesDiv = document.getElementById("messages");
-const messageInput = document.getElementById("messageInput");
-const sendBtn = document.getElementById("sendBtn");
-const createChatBtn = document.getElementById("createChatBtn");
-const deleteChatBtn = document.getElementById("deleteChatBtn");
-const status = document.getElementById("status");
+const $ = id => document.getElementById(id);
+const loginCard = $("loginCard"), chatCard = $("chatCard");
+const emailInput = $("emailInput"), passwordInput = $("passwordInput");
+const status = $("status"), chatSelect = $("chatSelect");
+const messagesDiv = $("messages"), messageInput = $("messageInput");
+const createChatBtn = $("createChatBtn"), deleteChatBtn = $("deleteChatBtn");
+const trollOverlay = $("trollOverlay");
 
-createChatBtn.style.display="none";
-deleteChatBtn.style.display="none";
+function setStatus(message, isError=false) {
+  status.textContent = message;
+  status.style.color = isError ? "#b91c1c" : "#166534";
+}
+function isOwner(email=auth.currentUser?.email) { return email === OWNER; }
+function isDev(email=auth.currentUser?.email) { return email === DEVELOPER; }
+function isAdmin() { return currentUserData?.role === "admin"; }
+function isModerator() { return currentUserData?.role === "moderator"; }
+function canManageChats() { return isOwner() || isDev() || isAdmin(); }
+function canModerate() { return canManageChats() || isModerator(); }
 
-// SIGNUP
-signupBtn.onclick = async () => {
+function badge(role, email) {
+  const span = document.createElement("span");
+  span.className = "badge";
+  if(email === OWNER) { span.classList.add("owner"); span.textContent = "OWNER"; }
+  else if(email === DEVELOPER) { span.classList.add("dev"); span.textContent = "DEVELOPER"; }
+  else if(role === "admin") { span.classList.add("admin"); span.textContent = "ADMIN"; }
+  else if(role === "moderator") { span.classList.add("mod"); span.textContent = "MOD"; }
+  else return null;
+  return span;
+}
+
+$("signupBtn").onclick = async () => {
   try {
-    const user = await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
-    await setDoc(doc(db, "users", user.user.email), { role: "user", muted: false, banned: false, warnings: 0 });
-    status.textContent = "Account created";
-  } catch(e) { status.textContent = e.message; }
+    const credential = await createUserWithEmailAndPassword(auth, emailInput.value.trim(), passwordInput.value);
+    await setDoc(doc(db, "users", credential.user.email), {
+      role:"user", muted:false, banned:false, warnings:0
+    });
+    setStatus("Account created. You are now signed in.");
+  } catch(error) { setStatus(error.message, true); }
 };
-
-// LOGIN
-loginBtn.onclick = async () => {
-  try { await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value); }
-  catch(e) { status.textContent = e.message; }
+$("loginBtn").onclick = async () => {
+  try { await signInWithEmailAndPassword(auth, emailInput.value.trim(), passwordInput.value); }
+  catch(error) { setStatus(error.message, true); }
 };
+$("logoutBtn").onclick = () => signOut(auth);
 
-// AUTH STATE
 onAuthStateChanged(auth, async user => {
-  if(user){
-    loginCard.style.display="none";
-    chatCard.style.display="block";
-    const userDoc = await getDoc(doc(db,"users",user.email));
-    const role = userDoc.data().role;
-    const isOwner = user.email === OWNER;
-    const isDev = user.email === DEVELOPER;
-    const isAdmin = role === "admin";
-    if(isOwner||isDev||isAdmin){
-      createChatBtn.style.display="block";
-      deleteChatBtn.style.display="block";
+  stopListeners();
+  if(!user) {
+    currentUserData = null;
+    loginCard.classList.remove("hidden");
+    chatCard.classList.add("hidden");
+    closeTrollPanel();
+    return;
+  }
+  loginCard.classList.add("hidden");
+  chatCard.classList.remove("hidden");
+  try {
+    const userRef = doc(db, "users", user.email);
+    let userSnap = await getDoc(userRef);
+    if(!userSnap.exists()) {
+      await setDoc(userRef, {role:"user",muted:false,banned:false,warnings:0},{merge:true});
+      userSnap = await getDoc(userRef);
     }
+    currentUserData = userSnap.data() || {role:"user"};
+    createChatBtn.classList.toggle("hidden", !canManageChats());
+    deleteChatBtn.classList.toggle("hidden", !canManageChats());
+    watchOwnUser(user.email);
     loadChats();
     loadMessages();
+    watchTrollCommands(user.email);
+  } catch(error) {
+    console.error(error);
+    alert("Could not load your Fishcord profile: " + error.message);
   }
 });
 
-// LOAD CHATS
-function loadChats(){
-  onSnapshot(collection(db,"chats"), snap => {
-    chatSelect.innerHTML = "";
-    snap.forEach(chat => {
-      const opt = document.createElement("option");
-      opt.value = chat.id;
-      opt.text = chat.id;
-      chatSelect.appendChild(opt);
+function stopListeners() {
+  [messageUnsubscribe,chatsUnsubscribe,trollUnsubscribe,currentUserUnsubscribe]
+    .forEach(unsub => { if(typeof unsub === "function") unsub(); });
+  messageUnsubscribe = chatsUnsubscribe = trollUnsubscribe = currentUserUnsubscribe = null;
+}
+function watchOwnUser(email) {
+  currentUserUnsubscribe = onSnapshot(doc(db,"users",email), snap => {
+    if(snap.exists()) {
+      currentUserData = snap.data();
+      createChatBtn.classList.toggle("hidden", !canManageChats());
+      deleteChatBtn.classList.toggle("hidden", !canManageChats());
+    }
+  });
+}
+
+function loadChats() {
+  if(chatsUnsubscribe) chatsUnsubscribe();
+  chatsUnsubscribe = onSnapshot(collection(db,"chats"), snap => {
+    const previous = currentChat;
+    chatSelect.replaceChildren();
+    snap.forEach(chatDoc => {
+      const option = document.createElement("option");
+      option.value = chatDoc.id;
+      option.textContent = chatDoc.id;
+      chatSelect.appendChild(option);
     });
-  });
+    if(!snap.docs.length) {
+      const option = document.createElement("option");
+      option.value = ""; option.textContent = "No chat rooms"; chatSelect.appendChild(option);
+    }
+    currentChat = snap.docs.some(d => d.id === previous) ? previous : (snap.docs[0]?.id || "");
+    chatSelect.value = currentChat;
+    loadMessages();
+  }, error => console.error("Chat list error:",error));
+}
+chatSelect.onchange = () => { currentChat = chatSelect.value; loadMessages(); };
+
+function loadMessages() {
+  if(messageUnsubscribe) messageUnsubscribe();
+  messagesDiv.replaceChildren();
+  if(!auth.currentUser || !currentChat) return;
+  const q = query(collection(db,"chats",currentChat,"messages"),orderBy("timestamp"),limit(200));
+  messageUnsubscribe = onSnapshot(q, async snap => {
+    messagesDiv.replaceChildren();
+    for(const messageDoc of snap.docs) {
+      const data = messageDoc.data();
+      const sender = String(data.sender || "unknown");
+      const text = String(data.text || "");
+      const line = document.createElement("div");
+      line.className = "message";
+      let role = "user";
+      try {
+        const senderSnap = await getDoc(doc(db,"users",sender));
+        if(senderSnap.exists()) role = senderSnap.data().role || "user";
+      } catch(error) { console.warn("Could not load sender role",error); }
+      const roleBadge = badge(role,sender);
+      if(roleBadge) line.appendChild(roleBadge);
+      const content = document.createElement("span");
+      content.textContent = sender + " : " + text;
+      line.appendChild(content);
+      const timestamp = document.createElement("span");
+      timestamp.className = "timestamp";
+      timestamp.textContent = data.timestamp?.toDate?.().toLocaleTimeString?.() || "";
+      line.appendChild(timestamp);
+      messagesDiv.appendChild(line);
+    }
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }, error => console.error("Message listener error:",error));
 }
 
-// CHAT CHANGE
-chatSelect.onchange = () => {
-  currentChat = chatSelect.value;
-  loadMessages();
-};
-
-// CREATE CHAT
 createChatBtn.onclick = async () => {
-  const name = prompt("Chat name");
+  if(!canManageChats()) return alert("Permission denied.");
+  const name = prompt("New chat name");
   if(!name) return;
-  await setDoc(doc(db,"chats",name), { createdBy: auth.currentUser.email, locked: false });
+  const safeName = name.trim().slice(0,50);
+  if(!safeName || safeName.includes("/")) return alert("Please choose a valid chat name.");
+  try { await setDoc(doc(db,"chats",safeName),{createdBy:auth.currentUser.email,locked:false}); }
+  catch(error) { alert("Could not create chat: " + error.message); }
+};
+deleteChatBtn.onclick = () => deleteChat(currentChat);
+async function deleteChat(chatName) {
+  if(!canManageChats()) return alert("Only OWNER, DEVELOPER, or ADMIN can delete chats.");
+  if(!chatName || !confirm("Delete " + chatName + " permanently?")) return;
+  try {
+    const snap = await getDocs(collection(db,"chats",chatName,"messages"));
+    for(const item of snap.docs) await deleteDoc(doc(db,"chats",chatName,"messages",item.id));
+    await deleteDoc(doc(db,"chats",chatName));
+    messagesDiv.replaceChildren();
+    currentChat = "";
+  } catch(error) { alert("Could not delete chat: " + error.message); }
+}
+
+function containsBannedWord(text) {
+  const lower = text.toLowerCase();
+  return bannedWords.some(word => lower.includes(word.toLowerCase()));
+}
+async function sendMessage() {
+  const text = messageInput.value.trim();
+  if(!text || !auth.currentUser) return;
+  if(text.startsWith("/")) {
+    await handleCommand(text);
+    return;
+  }
+  if(currentUserData?.banned) return alert("You are banned.");
+  if(currentUserData?.muted) return alert("You are muted.");
+  if(containsBannedWord(text)) { alert("Message contains banned words."); messageInput.value=""; return; }
+  if(!currentChat) return alert("Select a chat room first.");
+  try {
+    await addDoc(collection(db,"chats",currentChat,"messages"),{
+      sender:auth.currentUser.email,text,timestamp:serverTimestamp()
+    });
+    messageInput.value = "";
+  } catch(error) { alert("Could not send message: " + error.message); }
+}
+$("sendBtn").onclick = sendMessage;
+messageInput.addEventListener("keydown", event => { if(event.key === "Enter") sendMessage(); });
+
+async function handleCommand(text) {
+  const args = text.trim().split(/\s+/);
+  const command = args[0].toLowerCase();
+  if(command === "/help") {
+    alert("Fishcord commands:\n/help\n/troll (DEVELOPER only)\n/promote [email] [user|moderator|admin]\n/delete chat [chatname]\n/clear [number]\n/mute [email]\n/unmute [email]");
+    messageInput.value=""; return;
+  }
+  if(command === "/troll") {
+    if(!isDev()) { alert("DEVELOPER permission required."); return; }
+    await openTrollPanel();
+    messageInput.value=""; return;
+  }
+  if(command === "/promote") {
+    if(!(isOwner() || isDev())) return alert("Only OWNER or DEVELOPER can promote users.");
+    const targetEmail=args[1], newRole=(args[2]||"").toLowerCase();
+    if(!targetEmail || !["user","moderator","admin"].includes(newRole)) return alert("Usage: /promote [email] [user|moderator|admin]");
+    if(targetEmail===OWNER || targetEmail===DEVELOPER) return alert("Cannot change role of OWNER or DEVELOPER.");
+    const targetRef=doc(db,"users",targetEmail), targetSnap=await getDoc(targetRef);
+    if(!targetSnap.exists()) return alert("User not found.");
+    await setDoc(targetRef,{role:newRole},{merge:true});
+    alert(targetEmail+" promoted to "+newRole.toUpperCase()); messageInput.value=""; return;
+  }
+  if(command === "/delete" && args[1] === "chat") {
+    if(!canManageChats()) return alert("No permission.");
+    await deleteChat(args[2]); messageInput.value=""; return;
+  }
+  if(command === "/clear") {
+    if(!canModerate()) return alert("No permission.");
+    const amount=parseInt(args[1],10);
+    if(!Number.isInteger(amount)||amount<=0||amount>500) return alert("Usage: /clear [number up to 500]");
+    const q=query(collection(db,"chats",currentChat,"messages"),orderBy("timestamp","desc"),limit(amount));
+    const snap=await getDocs(q);
+    for(const item of snap.docs) await deleteDoc(doc(db,"chats",currentChat,"messages",item.id));
+    messageInput.value=""; return;
+  }
+  if(command === "/mute" || command === "/unmute") {
+    if(!canModerate()) return alert("No permission.");
+    const email=args[1];
+    if(!email) return alert("Usage: "+command+" user@email.com");
+    if(email===OWNER||email===DEVELOPER) return alert("Cannot change OWNER or DEVELOPER mute status.");
+    await setDoc(doc(db,"users",email),{muted:command==="/mute"},{merge:true});
+    alert(email+(command==="/mute"?" has been muted.":" has been unmuted."));
+    messageInput.value=""; return;
+  }
+  alert("Unknown command. Type /help.");
+  messageInput.value="";
+}
+
+/* Troll dashboard */
+const trollActions = {
+  fish:{title:"🐟 Fish invasion",description:"A school of fish swims across the screen.",duration:9000},
+  invert:{title:"🌈 Inverted colors",description:"The page colors have been temporarily inverted.",duration:10000},
+  disconnect:{title:"📡 Connection Lost (simulation)",description:"Just kidding! This is a fake Fishcord connection warning.",duration:10000},
+  loading:{title:"⏳ Fishcord is loading...",description:"Please wait while the fish do their thing.",duration:9000},
+  warning:{title:"⚠️ Important Fishcord Notice",description:"A wild fish has entered your chat. Please remain calm.",duration:9000},
+  toast:{title:"🔔 New Fishcord notification",description:"You have been selected for an extremely fishy experience.",duration:7000}
 };
 
-// DELETE CHAT
-deleteChatBtn.onclick = async () => { deleteChat(currentChat); };
-
-async function deleteChat(chatName){
-  const userDoc = await getDoc(doc(db,"users",auth.currentUser.email));
-  const role = userDoc.data().role;
-  const isOwner = auth.currentUser.email === OWNER;
-  const isDev = auth.currentUser.email === DEVELOPER;
-  const isAdmin = role === "admin";
-  if(!(isOwner||isDev||isAdmin)){ alert("Only OWNER, DEVELOPER, or ADMIN can delete chats."); return; }
-  if(!confirm("Delete "+chatName+" permanently?")) return;
-  const snap = await getDocs(collection(db,"chats",chatName,"messages"));
-  for(const m of snap.docs){ await deleteDoc(doc(db,"chats",chatName,"messages",m.id)); }
-  await deleteDoc(doc(db,"chats",chatName));
-  messagesDiv.innerHTML="";
-  currentChat="";
-  loadChats();
-  alert("Chat deleted.");
+async function openTrollPanel() {
+  if(!isDev()) return alert("DEVELOPER permission required.");
+  trollOverlay.style.display="block";
+  trollOverlay.setAttribute("aria-hidden","false");
+  await populateTrollTargets();
 }
-
-// BADGE FUNCTION
-function badge(role,email){
-  if(email===OWNER) return '<span class="badge owner">OWNER</span>';
-  if(email===DEVELOPER) return '<span class="badge dev">DEVELOPER</span>';
-  if(role==="admin") return '<span class="badge admin">ADMIN</span>';
-  if(role==="moderator") return '<span class="badge mod">MOD</span>';
-  return "";
+function closeTrollPanel() {
+  trollOverlay.style.display="none";
+  trollOverlay.setAttribute("aria-hidden","true");
 }
+$("closeTrollBtn").onclick=closeTrollPanel;
+trollOverlay.addEventListener("click",event=>{if(event.target===trollOverlay)closeTrollPanel();});
 
-// LOAD MESSAGES WITH DEVELOPER-ONLY XSS ALLOWED
-function loadMessages(){
-  const q = query(collection(db,"chats",currentChat,"messages"), orderBy("timestamp"));
-  onSnapshot(q, async snap => {
-    messagesDiv.innerHTML = "";
-    for(const m of snap.docs){
-      const data = m.data();
-      const lowerText = data.text.toLowerCase();
-      let containsBanned = false;
-      for(const word of bannedWords){ if(lowerText.includes(word.toLowerCase())){ containsBanned=true; break; } }
-      if(containsBanned){ await deleteDoc(doc(db,"chats",currentChat,"messages",m.id)); continue; }
-      
-      const userDoc = await getDoc(doc(db,"users",data.sender));
-      const role = userDoc.exists()?userDoc.data().role:"user";
-      const time = data.timestamp?.toDate().toLocaleTimeString()||"";
-      
-      const div = document.createElement("div");
-      div.className = "message";
+function selectTarget(email) {
+  document.querySelectorAll("#trollTarget,.targetMirror").forEach(select=>select.value=email);
+}
+async function populateTrollTargets() {
+  if(!isDev()) return;
+  const selects=[$("trollTarget"),$("effectTarget"),$("connectionTarget"),$("chatTarget")];
+  selects.forEach(select=>select.replaceChildren());
+  const placeholder=()=>{const o=document.createElement("option");o.value="";o.textContent="Choose a user...";return o;};
+  selects.forEach(select=>select.appendChild(placeholder()));
+  try {
+    const snap=await getDocs(collection(db,"users"));
+    snap.forEach(userDoc=>{
+      if(userDoc.id===OWNER||userDoc.id===DEVELOPER) return;
+      const optionText=userDoc.id;
+      selects.forEach(select=>{
+        const option=document.createElement("option");
+        option.value=userDoc.id;option.textContent=optionText;select.appendChild(option);
+      });
+    });
+    selects.forEach(select=>select.addEventListener("change",()=>selectTarget(select.value)));
+  } catch(error) {
+    console.error(error);
+    alert("Could not load target users: "+error.message);
+  }
+}
+document.querySelectorAll(".troll-nav button").forEach(button=>{
+  button.onclick=()=>{
+    document.querySelectorAll(".troll-nav button").forEach(b=>b.classList.toggle("active",b===button));
+    document.querySelectorAll(".troll-tab").forEach(section=>section.classList.add("hidden"));
+    $("tab-"+button.dataset.tab).classList.remove("hidden");
+  };
+});
+document.querySelectorAll(".troll-tile").forEach(button=>{
+  button.onclick=()=>sendTrollAction(button.dataset.action);
+});
+$("sendCustomPrank").onclick=()=>sendTrollAction("toast",$("customPrank").value.trim());
 
-      // Allow raw HTML execution ONLY if the sender is the hardcoded DEVELOPER
-      if (data.sender === DEVELOPER) {
-        div.innerHTML = badge(role, data.sender) + data.sender + " : " + data.text + '<span class="timestamp">' + time + '</span>';
-      } else {
-        // Safe rendering for everyone else to prevent XSS
-        div.innerHTML = badge(role, data.sender);
-        
-        const textSpan = document.createElement("span");
-        textSpan.textContent = ` ${data.sender} : ${data.text}`;
-        div.appendChild(textSpan);
-        
-        const timeSpan = document.createElement("span");
-        timeSpan.className = "timestamp";
-        timeSpan.textContent = time;
-        div.appendChild(timeSpan);
-      }
-
-      messagesDiv.appendChild(div);
-    }
+async function sendTrollAction(action, customMessage="") {
+  if(!isDev()) return alert("DEVELOPER permission required.");
+  const target=$("trollTarget").value;
+  if(!target) return alert("Choose a target user first.");
+  if(!trollActions[action]) return alert("Unknown prank.");
+  const prank=trollActions[action];
+  const message=customMessage ? customMessage.slice(0,180) : prank.description;
+  if(!confirm("Send \""+prank.title+"\" to "+target+"?")) return;
+  const commandId=crypto.randomUUID();
+  try {
+    await setDoc(doc(db,"trollCommands",target),{
+      action, title:prank.title, message,
+      commandId, issuedBy:auth.currentUser.email,
+      issuedAt:serverTimestamp(), expiresAt:Date.now()+30000
+    });
+    addHistory(target,prank.title);
+    alert("Prank sent to "+target+". It will only run if they are online.");
+  } catch(error) {
+    console.error(error);
+    alert("Could not send prank: "+error.message);
+  }
+}
+function addHistory(target,title) {
+  trollHistory.unshift({target,title,when:new Date().toLocaleTimeString()});
+  trollHistory=trollHistory.slice(0,30);
+  const container=$("trollHistory");
+  container.replaceChildren();
+  trollHistory.forEach(entry=>{
+    const p=document.createElement("p");
+    p.textContent=entry.when+" — "+entry.title+" → "+entry.target;
+    container.appendChild(p);
   });
 }
 
-// SEND MESSAGE & COMMANDS
-sendBtn.onclick = async () => {
-  const text = messageInput.value.trim();
-  if(!text) return;
-  const userDoc = await getDoc(doc(db,"users",auth.currentUser.email));
-  const me = userDoc.data();
-  const isOwner = auth.currentUser.email === OWNER;
-  const isDev = auth.currentUser.email === DEVELOPER;
-  const isAdmin = me.role === "admin";
-  const isMod = me.role === "moderator";
-  const lowerText = text.toLowerCase();
-  for(const word of bannedWords){ if(lowerText.includes(word.toLowerCase())){ alert("Message contains banned words."); messageInput.value=""; return; } }
-
-  // COMMANDS
-  if(text.startsWith("/")){
-    const args = text.split(" ");
-
-    // PROMOTE
-    if(args[0]==="/promote"){
-      if(!(isOwner||isDev)){ alert("Only OWNER or DEVELOPER can promote users."); return; }
-      const targetEmail = args[1]; const newRole = args[2];
-      if(!targetEmail || !newRole){ alert("Usage: /promote [email] [role]"); return; }
-      const validRoles = ["user","moderator","admin"];
-      if(!validRoles.includes(newRole.toLowerCase())){ alert("Invalid role."); return; }
-      if(targetEmail===OWNER||targetEmail===DEVELOPER){ alert("Cannot change role of OWNER or DEVELOPER."); return; }
-      const targetDoc = doc(db,"users",targetEmail);
-      const targetSnapshot = await getDoc(targetDoc);
-      if(!targetSnapshot.exists()){ alert("User not found."); return; }
-      await setDoc(targetDoc, { role: newRole.toLowerCase() }, { merge:true });
-      alert(targetEmail+" promoted to "+newRole.toUpperCase());
-      messageInput.value=""; return;
-    }
-
-    // DELETE CHAT
-    if(args[0]==="/delete" && args[1]==="chat"){
-      if(!(isOwner||isDev||isAdmin)){ alert("No permission"); return; }
-      const chatName = args[2];
-      if(!chatName){ alert("Usage: /delete chat [chatname]"); return; }
-      await deleteChat(chatName); messageInput.value=""; return;
-    }
-
-    // CLEAR
-    if(args[0]==="/clear"){
-      if(!(isOwner||isDev||isAdmin||isMod)){ alert("No permission"); return; }
-      const amount = parseInt(args[1]);
-      if(!amount || amount<=0){ alert("Usage: /clear [number]"); return; }
-      const messagesQuery = query(collection(db,"chats",currentChat,"messages"), orderBy("timestamp","desc"));
-      const snap = await getDocs(messagesQuery);
-      let deleted=0;
-      for(const docSnap of snap.docs){ if(deleted>=amount) break; await deleteDoc(doc(db,"chats",currentChat,"messages",docSnap.id)); deleted++; }
-      messageInput.value=""; return;
-    }
-
-    // MUTE
-    if(args[0]==="/mute"){
-      if(!(isOwner||isDev||isAdmin||isMod)){ alert("No permission"); return; }
-      const email=args[1];
-      if(!email){ alert("Usage: /mute user@email.com"); return; }
-      if(email===OWNER||email===DEVELOPER){ alert("Cannot mute OWNER or DEVELOPER."); return; }
-      await setDoc(doc(db,"users",email),{muted:true},{merge:true});
-      alert(email+" has been muted."); messageInput.value=""; return;
-    }
-
-    // UNMUTE
-    if(args[0]==="/unmute"){
-      if(!(isOwner||isDev||isAdmin||isMod)){ alert("No permission"); return; }
-      const email=args[1];
-      if(!email){ alert("Usage: /unmute user@email.com"); return; }
-      if(email===OWNER||email===DEVELOPER){ alert("Cannot unmute OWNER or DEVELOPER."); return; }
-      await setDoc(doc(db,"users",email),{muted:false},{merge:true});
-      alert(email+" has been unmuted."); messageInput.value=""; return;
-    }
+function watchTrollCommands(email) {
+  trollUnsubscribe=onSnapshot(doc(db,"trollCommands",email),snap=>{
+    if(!snap.exists()) return;
+    const data=snap.data();
+    if(!data.commandId || data.commandId===lastTrollId) return;
+    if(!Number.isFinite(data.expiresAt)||data.expiresAt<Date.now()) return;
+    if(!Object.prototype.hasOwnProperty.call(trollActions,data.action) && data.action!=="toast") return;
+    lastTrollId=data.commandId;
+    sessionStorage.setItem("lastTroll",lastTrollId);
+    runTrollEffect(data);
+  },error=>console.warn("Troll listener error:",error));
+}
+let activePrankTimer=null;
+let activeFishLayer=null;
+function runTrollEffect(data) {
+  const action=data.action;
+  if(action==="invert") {
+    document.body.style.filter="invert(1)";
+    setTimeout(()=>{document.body.style.filter="";},10000);
+    return;
   }
+  if(action==="fish") {
+    if(activeFishLayer) activeFishLayer.remove();
+    const layer=document.createElement("div");
+    layer.className="fish-rain";
+    for(let i=0;i<22;i++) {
+      const fish=document.createElement("span");
+      fish.textContent=["🐟","🐠","🐡"][i%3];
+      fish.style.top=(Math.random()*90)+"%";
+      fish.style.left=(-15-Math.random()*40)+"vw";
+      fish.style.animationDelay=(Math.random()*2)+"s";
+      layer.appendChild(fish);
+    }
+    document.body.appendChild(layer);activeFishLayer=layer;
+    setTimeout(()=>{layer.remove();if(activeFishLayer===layer)activeFishLayer=null;},9000);
+    return;
+  }
+  if(action==="toast") {
+    $("toastMessage").textContent=data.message||"A wild fish has entered your chat!";
+    $("prankToast").style.display="block";
+    setTimeout(()=>$("prankToast").style.display="none",7000);
+    return;
+  }
+  const details=trollActions[action]||trollActions.warning;
+  $("prankTitle").textContent=data.title||details.title;
+  $("prankMessage").textContent=data.message||details.description;
+  $("prankLayer").style.display="flex";
+  if(activePrankTimer) clearTimeout(activePrankTimer);
+  activePrankTimer=setTimeout(dismissPrank,details.duration||9000);
+}
+function dismissPrank() {
+  $("prankLayer").style.display="none";
+  if(activePrankTimer) clearTimeout(activePrankTimer);
+  activePrankTimer=null;
+}
+$("dismissPrank").onclick=dismissPrank;
+$("dismissToast").onclick=()=>$("prankToast").style.display="none";
 
-  if(me.banned){ alert("You are banned."); return; }
-  if(me.muted){ alert("You are muted."); return; }
-
-  await addDoc(collection(db,"chats",currentChat,"messages"), { sender: auth.currentUser.email, text: text, timestamp: serverTimestamp() });
-  messageInput.value="";
-};
+/* Escape key closes developer overlay and dismisses visual pranks. */
+document.addEventListener("keydown",event=>{
+  if(event.key==="Escape") {
+    closeTrollPanel();
+    dismissPrank();
+    $("prankToast").style.display="none";
+  }
+});
 </script>
 </body>
 </html>
