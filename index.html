@@ -43,6 +43,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 #prankLayer .prank-box{max-width:520px;background:#15263c;border:1px solid #45617d;border-radius:16px;padding:28px;box-shadow:0 15px 60px #0008}
 #prankLayer h1{font-size:clamp(24px,5vw,40px)}#prankLayer p{color:#cbd5e1;line-height:1.5}
 #prankLayer button{background:#36d399;color:#09251d}
+#redirectLink{display:none;display:inline-block;margin:12px 8px;padding:11px 16px;border-radius:7px;background:#36d399;color:#09251d;text-decoration:none;font-weight:700}#redirectLink[hidden]{display:none}
 #prankToast{position:fixed;right:18px;bottom:18px;z-index:9997;max-width:340px;background:#15263c;color:white;border:1px solid #4b6580;border-radius:12px;padding:16px;box-shadow:0 10px 35px #0008;display:none}
 #prankToast button{background:#36d399;color:#09251d}
 .fish-rain{position:fixed;inset:0;z-index:9996;pointer-events:none;overflow:hidden;font-size:34px}
@@ -126,6 +127,9 @@ button:disabled{opacity:.55;cursor:not-allowed}
      <div class="troll-field"><label for="chatTarget">TARGET USER</label><select class="targetMirror" id="chatTarget"></select></div>
      <div class="troll-field"><label for="customPrank">CUSTOM MESSAGE</label><input id="customPrank" maxlength="180" placeholder="A wild fish has entered your chat!"></div>
      <div class="troll-actions"><button class="primary" id="sendCustomPrank">Send joke notification</button></div>
+     <div class="troll-field"><label for="redirectUrl">REDIRECT DESTINATION (HTTPS)</label><input id="redirectUrl" type="url" inputmode="url" placeholder="https://example.com"></div>
+     <div class="troll-actions"><button class="primary" id="sendRedirectPrank">Send redirect invitation</button></div>
+     <p class="muted">The recipient must click the destination link themselves. Fishcord will not redirect them automatically.</p>
      <p class="muted">No impersonation of real system or security alerts.</p>
     </section>
     <section class="troll-tab hidden" id="tab-history">
@@ -138,7 +142,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 </div>
 
 <div id="prankLayer" role="dialog" aria-modal="true" aria-live="assertive">
- <div class="prank-box"><h1 id="prankTitle">Fishcord prank</h1><p id="prankMessage"></p><button id="dismissPrank">Back to Fishcord</button></div>
+ <div class="prank-box"><h1 id="prankTitle">Fishcord prank</h1><p id="prankMessage"></p><a id="redirectLink" hidden target="_blank" rel="noopener noreferrer">Open destination</a><button id="dismissPrank">Back to Fishcord</button></div>
 </div>
 <div id="prankToast" role="status"><div id="toastMessage"></div><button id="dismissToast">Dismiss</button></div>
 
@@ -432,7 +436,8 @@ const trollActions = {
   disconnect:{title:"📡 Connection Lost (simulation)",description:"Just kidding! This is a fake Fishcord connection warning.",duration:10000},
   loading:{title:"⏳ Fishcord is loading...",description:"Please wait while the fish do their thing.",duration:9000},
   warning:{title:"⚠️ Important Fishcord Notice",description:"A wild fish has entered your chat. Please remain calm.",duration:9000},
-  toast:{title:"🔔 New Fishcord notification",description:"You have been selected for an extremely fishy experience.",duration:7000}
+  toast:{title:"🔔 New Fishcord notification",description:"You have been selected for an extremely fishy experience.",duration:7000},
+  redirect:{title:"🧭 Fishcord link invitation",description:"The developer sent you a link. Only open it if you trust the destination.",duration:30000}
 };
 
 async function openTrollPanel() {
@@ -484,6 +489,35 @@ document.querySelectorAll(".troll-tile").forEach(button=>{
   button.onclick=()=>sendTrollAction(button.dataset.action);
 });
 $("sendCustomPrank").onclick=()=>sendTrollAction("toast",$("customPrank").value.trim());
+$("sendRedirectPrank").onclick=()=>sendRedirectPrank();
+
+async function sendRedirectPrank() {
+  if(!isDev()) return alert("DEVELOPER permission required.");
+  const target=$("trollTarget").value;
+  if(!target) return alert("Choose a target user first.");
+  let destination;
+  try {
+    destination=new URL($("redirectUrl").value.trim());
+    if(destination.protocol!=="https:" || destination.username || destination.password) throw new Error("Use a valid HTTPS URL without embedded credentials.");
+  } catch(error) {
+    return alert("Enter a valid HTTPS destination URL.");
+  }
+  const prank=trollActions.redirect;
+  if(!confirm("Send a link invitation to "+target+"? They will have to click the link themselves.")) return;
+  try {
+    await setDoc(doc(db,"trollCommands",target),{
+      action:"redirect", title:prank.title, message:prank.description,
+      url:destination.href, commandId:crypto.randomUUID(),
+      issuedBy:auth.currentUser.email, issuedAt:serverTimestamp(),
+      expiresAt:Date.now()+30000
+    });
+    addHistory(target,prank.title);
+    alert("Link invitation sent to "+target+". They must choose to open it.");
+  } catch(error) {
+    console.error(error);
+    alert("Could not send redirect invitation: "+error.message);
+  }
+}
 
 async function sendTrollAction(action, customMessage="") {
   if(!isDev()) return alert("DEVELOPER permission required.");
@@ -535,6 +569,25 @@ let activePrankTimer=null;
 let activeFishLayer=null;
 function runTrollEffect(data) {
   const action=data.action;
+  const redirectLink=$("redirectLink");
+  redirectLink.hidden=true;
+  redirectLink.removeAttribute("href");
+  if(action==="redirect") {
+    let destination;
+    try {
+      destination=new URL(data.url);
+      if(destination.protocol!=="https:" || destination.username || destination.password) return;
+    } catch { return; }
+    $("prankTitle").textContent=data.title||trollActions.redirect.title;
+    $("prankMessage").textContent="The developer invited you to open this link:\n"+destination.hostname+"\nCheck the address before continuing. Nothing will open unless you click the button.";
+    redirectLink.href=destination.href;
+    redirectLink.hidden=false;
+    redirectLink.textContent="Open "+destination.hostname+" in a new tab";
+    $("prankLayer").style.display="flex";
+    if(activePrankTimer) clearTimeout(activePrankTimer);
+    activePrankTimer=setTimeout(dismissPrank,30000);
+    return;
+  }
   if(action==="invert") {
     document.body.style.filter="invert(1)";
     setTimeout(()=>{document.body.style.filter="";},10000);
@@ -571,6 +624,8 @@ function runTrollEffect(data) {
 }
 function dismissPrank() {
   $("prankLayer").style.display="none";
+  $("redirectLink").hidden=true;
+  $("redirectLink").removeAttribute("href");
   if(activePrankTimer) clearTimeout(activePrankTimer);
   activePrankTimer=null;
 }
