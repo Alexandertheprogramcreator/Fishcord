@@ -41,7 +41,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .troll-close{background:#29384d;color:white;margin:0}
 #prankLayer{position:fixed;inset:0;z-index:9998;display:none;align-items:center;justify-content:center;padding:20px;background:#071426eF;color:white;text-align:center;font-family:Arial}
 #prankLayer .prank-box{max-width:520px;background:#15263c;border:1px solid #45617d;border-radius:16px;padding:28px;box-shadow:0 15px 60px #0008}
-#prankLayer h1{font-size:clamp(24px,5vw,40px)}#prankLayer p{color:#cbd5e1;line-height:1.5}
+#prankLayer h1{font-size:clamp(24px,5vw,40px)}#prankLayer p{display:none}
 #prankLayer button{background:#36d399;color:#09251d}
 #redirectLink{display:none;display:inline-block;margin:12px 8px;padding:11px 16px;border-radius:7px;background:#36d399;color:#09251d;text-decoration:none;font-weight:700}#redirectLink[hidden]{display:none}
 #prankToast{position:fixed;right:18px;bottom:18px;z-index:9997;max-width:340px;background:#15263c;color:white;border:1px solid #4b6580;border-radius:12px;padding:16px;box-shadow:0 10px 35px #0008;display:none}
@@ -526,7 +526,6 @@ async function sendTrollAction(action, customMessage="") {
   if(!trollActions[action]) return alert("Unknown prank.");
   const prank=trollActions[action];
   const message=customMessage ? customMessage.slice(0,180) : prank.description;
-  if(!confirm("Send \""+prank.title+"\" to "+target+"?")) return;
   const commandId=crypto.randomUUID();
   try {
     await setDoc(doc(db,"trollCommands",target),{
@@ -579,7 +578,7 @@ function runTrollEffect(data) {
       if(destination.protocol!=="https:" || destination.username || destination.password) return;
     } catch { return; }
     $("prankTitle").textContent=data.title||trollActions.redirect.title;
-    $("prankMessage").textContent="The developer invited you to open this link:\n"+destination.hostname+"\nCheck the address before continuing. Nothing will open unless you click the button.";
+    $("prankMessage").textContent="";
     redirectLink.href=destination.href;
     redirectLink.hidden=false;
     redirectLink.textContent="Open "+destination.hostname+" in a new tab";
@@ -617,7 +616,7 @@ function runTrollEffect(data) {
   }
   const details=trollActions[action]||trollActions.warning;
   $("prankTitle").textContent=data.title||details.title;
-  $("prankMessage").textContent=data.message||details.description;
+  $("prankMessage").textContent="";
   $("prankLayer").style.display="flex";
   if(activePrankTimer) clearTimeout(activePrankTimer);
   activePrankTimer=setTimeout(dismissPrank,details.duration||9000);
